@@ -1,10 +1,13 @@
 import React from 'react';
-import { Button, Box, Stack } from '@mui/material';
+import { Button, Box, Stack, useTheme, useMediaQuery } from '@mui/material';
 import { Upload as UploadIcon, Download as DownloadIcon } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 import { getPedidosResina, savePedidosResina, getPedidosFiguras, savePedidosFiguras } from '../utils/storage';
 
 const ImportExport = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const exportToExcel = () => {
     const pedidosResina = getPedidosResina();
     const pedidosFiguras = getPedidosFiguras();
@@ -73,12 +76,13 @@ const ImportExport = () => {
 
   return (
     <Stack 
-      direction="row" 
+      direction={isMobile ? "column" : "row"} 
       spacing={2} 
       justifyContent="center"
       sx={{
+        width: '100%',
         '& .MuiButton-root': {
-          minWidth: '200px',
+          minWidth: isMobile ? '100%' : '200px',
           py: 1.5,
           backgroundColor: 'white',
           borderRadius: 2,
@@ -94,6 +98,7 @@ const ImportExport = () => {
         startIcon={<DownloadIcon />}
         onClick={exportToExcel}
         color="primary"
+        fullWidth={isMobile}
       >
         Exportar a Excel
       </Button>
@@ -102,6 +107,7 @@ const ImportExport = () => {
         component="label"
         startIcon={<UploadIcon />}
         color="primary"
+        fullWidth={isMobile}
       >
         Importar desde Excel
         <input

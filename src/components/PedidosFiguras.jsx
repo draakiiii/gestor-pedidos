@@ -9,7 +9,14 @@ import {
   TextField,
   MenuItem,
   IconButton,
-  Tooltip
+  Tooltip,
+  useTheme,
+  useMediaQuery,
+  Card,
+  CardContent,
+  Typography,
+  Stack,
+  Chip
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -24,6 +31,8 @@ const UBICACIONES = [
 ];
 
 const PedidosFiguras = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { pedidosFiguras, actualizarPedidosFiguras, eliminarPedidoFigura } = usePedidos();
   const [openDialog, setOpenDialog] = useState(false);
   const [currentPedido, setCurrentPedido] = useState(null);
@@ -65,6 +74,21 @@ const PedidosFiguras = () => {
     setFecha(null);
   };
 
+  const getUbicacionColor = (codigo) => {
+    switch (codigo) {
+      case 'W':
+        return '#4CAF50';
+      case 'T':
+        return '#2196F3';
+      case 'P':
+        return '#9C27B0';
+      case 'A':
+        return '#FF9800';
+      default:
+        return '#757575';
+    }
+  };
+
   const columns = [
     { 
       field: 'figura', 
@@ -95,9 +119,18 @@ const PedidosFiguras = () => {
       headerName: 'Ubicación', 
       flex: 1,
       minWidth: 130,
-      valueFormatter: (params) => {
+      renderCell: (params) => {
         const ubicacion = UBICACIONES.find(u => u.codigo === params.value);
-        return ubicacion ? ubicacion.nombre : params.value;
+        return (
+          <Chip
+            label={ubicacion ? ubicacion.nombre : params.value}
+            size="small"
+            sx={{
+              backgroundColor: getUbicacionColor(params.value),
+              color: 'white'
+            }}
+          />
+        );
       }
     },
     { 
@@ -148,8 +181,72 @@ const PedidosFiguras = () => {
     },
   ];
 
+  const MobileCard = ({ pedido }) => {
+    const ubicacion = UBICACIONES.find(u => u.codigo === pedido.ubicacion);
+    
+    return (
+      <Card sx={{ mb: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <CardContent>
+          <Stack spacing={2}>
+            <Typography variant="h6" noWrap sx={{ mb: 1 }}>
+              {pedido.figura}
+            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Precio
+              </Typography>
+              <Typography variant="h6" color="primary">
+                {new Intl.NumberFormat('es-ES', {
+                  style: 'currency',
+                  currency: 'EUR'
+                }).format(pedido.precio)}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Ubicación
+              </Typography>
+              <Chip
+                label={ubicacion ? ubicacion.nombre : pedido.ubicacion}
+                size="small"
+                sx={{
+                  backgroundColor: getUbicacionColor(pedido.ubicacion),
+                  color: 'white'
+                }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Fecha
+              </Typography>
+              <Typography>
+                {new Date(pedido.fecha).toLocaleDateString('es-ES')}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+              <IconButton 
+                onClick={() => handleEdit(pedido)}
+                size="small"
+                color="primary"
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton 
+                onClick={() => eliminarPedidoFigura(pedido.id)}
+                size="small"
+                color="error"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
-    <Box sx={{ height: 500, width: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
       <Button
         variant="contained"
         startIcon={<AddIcon />}
@@ -163,32 +260,38 @@ const PedidosFiguras = () => {
         Añadir Figura
       </Button>
 
-      <DataGrid
-        rows={pedidosFiguras}
-        columns={columns}
-        pageSize={7}
-        rowsPerPageOptions={[7, 14, 25]}
-        disableSelectionOnClick
-        getRowId={(row) => row.id}
-        autoHeight
-        sx={{
-          '& .MuiDataGrid-cell:focus': {
-            outline: 'none',
-          },
-          '& .MuiDataGrid-row:hover': {
-            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-          },
-          '& .MuiDataGrid-virtualScroller': {
-            overflow: 'hidden !important',
-          }
-        }}
-      />
+      {isMobile ? (
+        <Box sx={{ mt: 2 }}>
+          {pedidosFiguras.map((pedido) => (
+            <MobileCard key={pedido.id} pedido={pedido} />
+          ))}
+        </Box>
+      ) : (
+        <DataGrid
+          rows={pedidosFiguras}
+          columns={columns}
+          pageSize={7}
+          rowsPerPageOptions={[7, 14, 25]}
+          disableSelectionOnClick
+          getRowId={(row) => row.id}
+          autoHeight
+          sx={{
+            '& .MuiDataGrid-cell:focus': {
+              outline: 'none',
+            },
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+            }
+          }}
+        />
+      )}
 
       <Dialog 
         open={openDialog} 
         onClose={handleClose}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
       >
         <DialogTitle sx={{ pb: 2 }}>
           {currentPedido ? 'Editar Figura' : 'Nueva Figura'}
@@ -242,10 +345,10 @@ const PedidosFiguras = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={handleClose} variant="outlined">
+          <Button onClick={handleClose} variant="outlined" fullWidth={isMobile}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} variant="contained">
+          <Button onClick={handleSave} variant="contained" fullWidth={isMobile}>
             Guardar
           </Button>
         </DialogActions>

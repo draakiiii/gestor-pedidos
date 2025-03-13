@@ -43,18 +43,30 @@ const theme = createTheme({
     h4: {
       fontWeight: 600,
       color: '#1976d2',
+      fontSize: {
+        xs: '1.5rem',
+        sm: '2rem',
+        md: '2.125rem',
+      },
     },
     h6: {
       fontWeight: 500,
       color: '#1976d2',
       marginBottom: '1rem',
+      fontSize: {
+        xs: '1.1rem',
+        sm: '1.25rem',
+      },
     }
   },
   components: {
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: {
+            xs: 8,
+            sm: 12,
+          },
           boxShadow: '0 3px 5px 2px rgba(0, 0, 0, 0.05)',
         },
       },
@@ -65,6 +77,10 @@ const theme = createTheme({
           borderRadius: 8,
           textTransform: 'none',
           fontWeight: 500,
+          width: {
+            xs: '100%',
+            sm: 'auto',
+          },
         },
         contained: {
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
@@ -78,10 +94,24 @@ const theme = createTheme({
           backgroundColor: '#ffffff',
           '& .MuiDataGrid-cell': {
             borderColor: '#f0f0f0',
+            padding: {
+              xs: '8px 4px',
+              sm: '16px 8px',
+            },
+            fontSize: {
+              xs: '0.875rem',
+              sm: '1rem',
+            },
           },
           '& .MuiDataGrid-columnHeaders': {
             backgroundColor: '#f5f5f5',
             borderBottom: 'none',
+          },
+          '& .MuiDataGrid-virtualScroller': {
+            minHeight: {
+              xs: '300px',
+              sm: '400px',
+            },
           },
         },
       },
@@ -90,7 +120,7 @@ const theme = createTheme({
 });
 
 function App() {
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <ThemeProvider theme={theme}>
@@ -100,14 +130,14 @@ function App() {
           <Box sx={{ 
             minHeight: '100vh',
             backgroundColor: theme.palette.background.default,
-            pb: 4
+            pb: { xs: 2, sm: 4 }
           }}>
-            <AppBar position="static" elevation={0} sx={{ mb: 4, backgroundColor: '#fff' }}>
-              <Toolbar>
+            <AppBar position="static" elevation={0} sx={{ mb: { xs: 2, sm: 4 }, backgroundColor: '#fff' }}>
+              <Toolbar sx={{ flexDirection: { xs: 'column', sm: 'row' }, py: { xs: 2, sm: 1 } }}>
                 <Typography variant="h4" component="h1" sx={{ 
                   flexGrow: 1,
                   textAlign: 'center',
-                  py: 2,
+                  mb: { xs: 1, sm: 0 },
                   color: theme.palette.primary.main
                 }}>
                   Gestor de Pedidos de Resina
@@ -115,30 +145,30 @@ function App() {
               </Toolbar>
             </AppBar>
 
-            <Container maxWidth="xl">
+            <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
               <Box sx={{ 
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 4
+                gap: { xs: 2, sm: 4 }
               }}>
                 <Paper 
                   elevation={0}
                   sx={{ 
-                    p: 3,
+                    p: { xs: 2, sm: 3 },
                     backgroundColor: 'rgba(255,255,255,0.8)',
                     backdropFilter: 'blur(10px)'
                   }}
                 >
-                  <Box sx={{ mb: 3 }}>
+                  <Box sx={{ mb: { xs: 2, sm: 3 } }}>
                     <ImportExport />
                   </Box>
 
-                  <Grid container spacing={4}>
+                  <Grid container spacing={{ xs: 2, sm: 4 }}>
                     <Grid item xs={12} md={6}>
                       <Paper 
                         elevation={0}
                         sx={{ 
-                          p: 3,
+                          p: { xs: 2, sm: 3 },
                           height: '100%',
                           border: '1px solid rgba(0,0,0,0.05)'
                         }}
@@ -153,7 +183,7 @@ function App() {
                       <Paper 
                         elevation={0}
                         sx={{ 
-                          p: 3,
+                          p: { xs: 2, sm: 3 },
                           height: '100%',
                           border: '1px solid rgba(0,0,0,0.05)'
                         }}

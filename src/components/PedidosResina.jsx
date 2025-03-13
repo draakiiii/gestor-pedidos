@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Button, 
@@ -8,7 +8,13 @@ import {
   DialogActions,
   TextField,
   IconButton,
-  Tooltip
+  Tooltip,
+  useTheme,
+  useMediaQuery,
+  Card,
+  CardContent,
+  Typography,
+  Stack
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -17,17 +23,14 @@ import { calcularDineroBruto } from '../utils/storage';
 import { usePedidos } from '../context/PedidosContext';
 
 const PedidosResina = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { pedidosResina, pedidosFiguras, actualizarPedidosResina, eliminarPedidoResina } = usePedidos();
   const [openDialog, setOpenDialog] = useState(false);
   const [currentPedido, setCurrentPedido] = useState(null);
   const [fechaCompra, setFechaCompra] = useState(null);
   const [fechaFin, setFechaFin] = useState(null);
   const [cantidad, setCantidad] = useState('');
-
-  // Monitorear cambios en pedidosResina
-  useEffect(() => {
-    console.log('Pedidos de resina actualizados:', pedidosResina);
-  }, [pedidosResina]);
 
   const handleSave = () => {
     if (!fechaCompra || !cantidad) return;
@@ -46,13 +49,11 @@ const PedidosResina = () => {
       dineroBruto
     };
 
-    console.log('Guardando pedido:', newPedido);
     actualizarPedidosResina(newPedido);
     handleClose();
   };
 
   const handleEdit = (pedido) => {
-    console.log('Editando pedido:', pedido);
     setCurrentPedido(pedido);
     setFechaCompra(new Date(pedido.fechaCompra));
     setFechaFin(pedido.fechaFin ? new Date(pedido.fechaFin) : null);
@@ -170,8 +171,68 @@ const PedidosResina = () => {
     },
   ];
 
+  const MobileCard = ({ pedido }) => (
+    <Card sx={{ mb: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+      <CardContent>
+        <Stack spacing={1}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Fecha Compra
+            </Typography>
+            <Typography>
+              {new Date(pedido.fechaCompra).toLocaleDateString('es-ES')}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Fecha Fin
+            </Typography>
+            <Typography>
+              {pedido.fechaFin ? new Date(pedido.fechaFin).toLocaleDateString('es-ES') : 'Pendiente'}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Cantidad
+            </Typography>
+            <Typography>
+              {pedido.cantidad} KG
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Dinero Bruto
+            </Typography>
+            <Typography>
+              {new Intl.NumberFormat('es-ES', {
+                style: 'currency',
+                currency: 'EUR'
+              }).format(pedido.dineroBruto)}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+            <IconButton 
+              onClick={() => handleEdit(pedido)}
+              size="small"
+              color="primary"
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton 
+              onClick={() => eliminarPedidoResina(pedido.id)}
+              size="small"
+              color="error"
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <Box sx={{ height: 400, width: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
       <Button
         variant="contained"
         startIcon={<AddIcon />}
@@ -185,28 +246,38 @@ const PedidosResina = () => {
         Añadir Pedido
       </Button>
 
-      <DataGrid
-        rows={pedidosResina}
-        columns={columns}
-        pageSize={5}
-        rowsPerPageOptions={[5, 10, 25]}
-        disableSelectionOnClick
-        getRowId={(row) => row.id}
-        sx={{
-          '& .MuiDataGrid-cell:focus': {
-            outline: 'none',
-          },
-          '& .MuiDataGrid-row:hover': {
-            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-          },
-        }}
-      />
+      {isMobile ? (
+        <Box sx={{ mt: 2 }}>
+          {pedidosResina.map((pedido) => (
+            <MobileCard key={pedido.id} pedido={pedido} />
+          ))}
+        </Box>
+      ) : (
+        <DataGrid
+          rows={pedidosResina}
+          columns={columns}
+          pageSize={5}
+          rowsPerPageOptions={[5, 10, 25]}
+          disableSelectionOnClick
+          getRowId={(row) => row.id}
+          autoHeight
+          sx={{
+            '& .MuiDataGrid-cell:focus': {
+              outline: 'none',
+            },
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+            }
+          }}
+        />
+      )}
 
       <Dialog 
         open={openDialog} 
         onClose={handleClose}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
       >
         <DialogTitle sx={{ pb: 2 }}>
           {currentPedido ? 'Editar Pedido' : 'Nuevo Pedido'}
@@ -246,10 +317,10 @@ const PedidosResina = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={handleClose} variant="outlined">
+          <Button onClick={handleClose} variant="outlined" fullWidth={isMobile}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} variant="contained">
+          <Button onClick={handleSave} variant="contained" fullWidth={isMobile}>
             Guardar
           </Button>
         </DialogActions>
