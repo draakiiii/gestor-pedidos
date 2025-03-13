@@ -31,6 +31,7 @@ const PedidosFiguras = () => {
   const [precio, setPrecio] = useState('');
   const [ubicacion, setUbicacion] = useState('');
   const [fecha, setFecha] = useState(null);
+  const [comprador, setComprador] = useState('');
 
   const handleSave = () => {
     if (!figura || !precio || !ubicacion || !fecha) return;
@@ -40,7 +41,8 @@ const PedidosFiguras = () => {
       figura,
       precio: Number(precio),
       ubicacion,
-      fecha
+      fecha,
+      comprador: comprador || null
     };
 
     actualizarPedidosFiguras(newPedido);
@@ -53,6 +55,7 @@ const PedidosFiguras = () => {
     setPrecio(pedido.precio.toString());
     setUbicacion(pedido.ubicacion);
     setFecha(pedido.fecha);
+    setComprador(pedido.comprador || '');
     setOpenDialog(true);
   };
 
@@ -63,6 +66,7 @@ const PedidosFiguras = () => {
     setPrecio('');
     setUbicacion('');
     setFecha(null);
+    setComprador('');
   };
 
   const columns = [
@@ -70,14 +74,14 @@ const PedidosFiguras = () => {
       field: 'figura', 
       headerName: 'Figura', 
       flex: 2,
-      minWidth: 200
+      minWidth: 150
     },
     { 
       field: 'precio', 
       headerName: 'Precio', 
       type: 'number', 
       flex: 1,
-      minWidth: 120,
+      minWidth: 100,
       valueFormatter: (params) => {
         if (params.value != null) {
           return new Intl.NumberFormat('es-ES', {
@@ -94,7 +98,7 @@ const PedidosFiguras = () => {
       field: 'ubicacion', 
       headerName: 'Ubicación', 
       flex: 1,
-      minWidth: 130,
+      minWidth: 110,
       valueFormatter: (params) => {
         const ubicacion = UBICACIONES.find(u => u.codigo === params.value);
         return ubicacion ? ubicacion.nombre : params.value;
@@ -105,7 +109,7 @@ const PedidosFiguras = () => {
       headerName: 'Fecha', 
       type: 'date', 
       flex: 1,
-      minWidth: 130,
+      minWidth: 110,
       valueFormatter: (params) => {
         if (params.value) {
           return new Date(params.value).toLocaleDateString('es-ES', {
@@ -118,9 +122,16 @@ const PedidosFiguras = () => {
       }
     },
     {
+      field: 'comprador',
+      headerName: 'Comprador',
+      flex: 1,
+      minWidth: 120,
+      valueFormatter: (params) => params.value || 'Sin comprador'
+    },
+    {
       field: 'actions',
       headerName: 'Acciones',
-      width: 120,
+      width: 100,
       sortable: false,
       filterable: false,
       renderCell: (params) => (
@@ -149,7 +160,13 @@ const PedidosFiguras = () => {
   ];
 
   return (
-    <Box sx={{ height: 500, width: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ 
+      width: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      height: 'auto',
+      minHeight: 600
+    }}>
       <Button
         variant="contained"
         startIcon={<AddIcon />}
@@ -166,8 +183,8 @@ const PedidosFiguras = () => {
       <DataGrid
         rows={pedidosFiguras}
         columns={columns}
-        pageSize={7}
-        rowsPerPageOptions={[7, 14, 25]}
+        pageSize={10}
+        rowsPerPageOptions={[10, 25, 50, 100]}
         disableSelectionOnClick
         getRowId={(row) => row.id}
         autoHeight
@@ -178,9 +195,25 @@ const PedidosFiguras = () => {
           '& .MuiDataGrid-row:hover': {
             backgroundColor: 'rgba(0, 0, 0, 0.04)',
           },
+          width: '100%',
+          '& .MuiDataGrid-main': {
+            width: '100%'
+          },
           '& .MuiDataGrid-virtualScroller': {
-            overflow: 'hidden !important',
+            overflow: 'auto !important',
+            minHeight: 500
+          },
+          '& .MuiDataGrid-row': {
+            minHeight: '48px !important'
           }
+        }}
+        initialState={{
+          pagination: {
+            pageSize: 10,
+          },
+          columns: {
+            columnVisibilityModel: {}
+          },
         }}
       />
 
@@ -238,6 +271,13 @@ const PedidosFiguras = () => {
               onChange={setFecha}
               renderInput={(params) => <TextField {...params} fullWidth required />}
               inputFormat="dd/MM/yyyy"
+            />
+            <TextField
+              label="Comprador (Opcional)"
+              value={comprador}
+              onChange={(e) => setComprador(e.target.value)}
+              fullWidth
+              placeholder="Ej: Desiree"
             />
           </Box>
         </DialogContent>
