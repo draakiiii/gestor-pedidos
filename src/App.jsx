@@ -145,7 +145,6 @@ function App() {
               </Toolbar>
             </AppBar>
 
-<<<<<<< HEAD
             <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
               <Box sx={{ 
                 display: 'flex',

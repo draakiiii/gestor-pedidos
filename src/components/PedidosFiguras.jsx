@@ -93,6 +93,21 @@ const PedidosFiguras = () => {
     }
   };
 
+  const getUbicacionColor = (codigo) => {
+    switch (codigo) {
+      case 'W':
+        return '#4CAF50';
+      case 'T':
+        return '#2196F3';
+      case 'P':
+        return '#9C27B0';
+      case 'A':
+        return '#FF9800';
+      default:
+        return '#757575';
+    }
+  };
+
   const columns = [
     { 
       field: 'figura', 
@@ -286,7 +301,6 @@ const PedidosFiguras = () => {
         Añadir Figura
       </Button>
 
-<<<<<<< HEAD
       {isMobile ? (
         <Box sx={{ mt: 2 }}>
           {pedidosFiguras.map((pedido) => (
