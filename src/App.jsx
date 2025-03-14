@@ -198,62 +198,6 @@ function App() {
                 </Paper>
               </Box>
             </Container>
-=======
-            <Box sx={{ py: 4, px: 2 }}>
-              <Container maxWidth={false}>
-                <Box sx={{ 
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 4
-                }}>
-                  <Paper 
-                    elevation={0}
-                    sx={{ 
-                      p: 3,
-                      backgroundColor: 'rgba(255,255,255,0.8)',
-                      backdropFilter: 'blur(10px)'
-                    }}
-                  >
-                    <Box sx={{ mb: 3 }}>
-                      <ImportExport />
-                    </Box>
-
-                    <Grid container spacing={4}>
-                      <Grid item xs={12} lg={6}>
-                        <Paper 
-                          elevation={0}
-                          sx={{ 
-                            p: 3,
-                            height: '100%',
-                            border: '1px solid rgba(0,0,0,0.05)'
-                          }}
-                        >
-                          <Typography variant="h6" gutterBottom>
-                            Pedidos de Resina
-                          </Typography>
-                          <PedidosResina />
-                        </Paper>
-                      </Grid>
-                      <Grid item xs={12} lg={6}>
-                        <Paper 
-                          elevation={0}
-                          sx={{ 
-                            p: 3,
-                            height: '100%',
-                            border: '1px solid rgba(0,0,0,0.05)'
-                          }}
-                        >
-                          <Typography variant="h6" gutterBottom>
-                            Pedidos de Figuras
-                          </Typography>
-                          <PedidosFiguras />
-                        </Paper>
-                      </Grid>
-                    </Grid>
-                  </Paper>
-                </Box>
-              </Container>
-            </Box>
           </Box>
         </PedidosProvider>
       </LocalizationProvider>

@@ -123,7 +123,7 @@ const PedidosFiguras = () => {
       headerName: 'Ubicación', 
       flex: 1,
       minWidth: 110,
-      valueFormatter: (params) => {
+      renderCell: (params) => {
         const ubicacion = UBICACIONES.find(u => u.codigo === params.value);
         return (
           <Chip
@@ -234,6 +234,16 @@ const PedidosFiguras = () => {
                 {new Date(pedido.fecha).toLocaleDateString('es-ES')}
               </Typography>
             </Box>
+            {pedido.comprador && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Comprador
+                </Typography>
+                <Typography>
+                  {pedido.comprador}
+                </Typography>
+              </Box>
+            )}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
               <IconButton 
                 onClick={() => handleEdit(pedido)}
@@ -262,7 +272,7 @@ const PedidosFiguras = () => {
       display: 'flex', 
       flexDirection: 'column',
       height: 'auto',
-      minHeight: 600
+      minHeight: isMobile ? 'auto' : 600
     }}>
       <Button
         variant="contained"
@@ -287,8 +297,8 @@ const PedidosFiguras = () => {
         <DataGrid
           rows={pedidosFiguras}
           columns={columns}
-          pageSize={7}
-          rowsPerPageOptions={[7, 14, 25]}
+          pageSize={10}
+          rowsPerPageOptions={[10, 25, 50, 100]}
           disableSelectionOnClick
           getRowId={(row) => row.id}
           autoHeight
@@ -298,47 +308,29 @@ const PedidosFiguras = () => {
             },
             '& .MuiDataGrid-row:hover': {
               backgroundColor: 'rgba(0, 0, 0, 0.04)',
+            },
+            width: '100%',
+            '& .MuiDataGrid-main': {
+              width: '100%'
+            },
+            '& .MuiDataGrid-virtualScroller': {
+              overflow: 'auto !important',
+              minHeight: 500
+            },
+            '& .MuiDataGrid-row': {
+              minHeight: '48px !important'
             }
+          }}
+          initialState={{
+            pagination: {
+              pageSize: 10,
+            },
+            columns: {
+              columnVisibilityModel: {}
+            },
           }}
         />
       )}
-=======
-      <DataGrid
-        rows={pedidosFiguras}
-        columns={columns}
-        pageSize={10}
-        rowsPerPageOptions={[10, 25, 50, 100]}
-        disableSelectionOnClick
-        getRowId={(row) => row.id}
-        autoHeight
-        sx={{
-          '& .MuiDataGrid-cell:focus': {
-            outline: 'none',
-          },
-          '& .MuiDataGrid-row:hover': {
-            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-          },
-          width: '100%',
-          '& .MuiDataGrid-main': {
-            width: '100%'
-          },
-          '& .MuiDataGrid-virtualScroller': {
-            overflow: 'auto !important',
-            minHeight: 500
-          },
-          '& .MuiDataGrid-row': {
-            minHeight: '48px !important'
-          }
-        }}
-        initialState={{
-          pagination: {
-            pageSize: 10,
-          },
-          columns: {
-            columnVisibilityModel: {}
-          },
-        }}
-      />
 
       <Dialog 
         open={openDialog} 
