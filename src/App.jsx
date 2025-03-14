@@ -254,7 +254,6 @@ function App() {
                 </Box>
               </Container>
             </Box>
->>>>>>> 501797806294e411812616fb21d07a3569fdd431
           </Box>
         </PedidosProvider>
       </LocalizationProvider>

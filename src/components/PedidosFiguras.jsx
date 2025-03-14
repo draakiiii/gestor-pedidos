@@ -93,21 +93,6 @@ const PedidosFiguras = () => {
     }
   };
 
-  const getUbicacionColor = (codigo) => {
-    switch (codigo) {
-      case 'W':
-        return '#4CAF50';
-      case 'T':
-        return '#2196F3';
-      case 'P':
-        return '#9C27B0';
-      case 'A':
-        return '#FF9800';
-      default:
-        return '#757575';
-    }
-  };
-
   const columns = [
     { 
       field: 'figura', 
@@ -137,13 +122,8 @@ const PedidosFiguras = () => {
       field: 'ubicacion', 
       headerName: 'Ubicación', 
       flex: 1,
-<<<<<<< HEAD
-      minWidth: 130,
-      renderCell: (params) => {
-=======
       minWidth: 110,
       valueFormatter: (params) => {
->>>>>>> 501797806294e411812616fb21d07a3569fdd431
         const ubicacion = UBICACIONES.find(u => u.codigo === params.value);
         return (
           <Chip
@@ -277,9 +257,6 @@ const PedidosFiguras = () => {
   };
 
   return (
-<<<<<<< HEAD
-    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
-=======
     <Box sx={{ 
       width: '100%', 
       display: 'flex', 
@@ -287,7 +264,6 @@ const PedidosFiguras = () => {
       height: 'auto',
       minHeight: 600
     }}>
->>>>>>> 501797806294e411812616fb21d07a3569fdd431
       <Button
         variant="contained"
         startIcon={<AddIcon />}
@@ -363,7 +339,6 @@ const PedidosFiguras = () => {
           },
         }}
       />
->>>>>>> 501797806294e411812616fb21d07a3569fdd431
 
       <Dialog 
         open={openDialog} 
