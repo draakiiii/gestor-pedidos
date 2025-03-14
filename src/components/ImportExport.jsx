@@ -8,6 +8,32 @@ const ImportExport = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+    
+    // Si es un número (fecha de Excel), convertir a fecha
+    if (typeof dateStr === 'number') {
+      // Excel usa un sistema de fechas basado en días desde 1/1/1900
+      const excelEpoch = new Date(1900, 0, 1);
+      const millisecondsPerDay = 24 * 60 * 60 * 1000;
+      return new Date(excelEpoch.getTime() + (dateStr - 1) * millisecondsPerDay);
+    }
+
+    // Si es string, intentar parsear el formato dd/mm/yyyy
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return new Date(year, month, day);
+      }
+    }
+
+    // Si no se puede parsear, retornar null
+    return null;
+  };
+
   const exportToExcel = () => {
     const pedidosResina = getPedidosResina();
     const pedidosFiguras = getPedidosFiguras();
@@ -17,15 +43,15 @@ const ImportExport = () => {
     // Convertir pedidos de resina a worksheet
     const wsPedidosResina = XLSX.utils.json_to_sheet(pedidosResina.map(p => ({
       ...p,
-      fechaCompra: new Date(p.fechaCompra).toLocaleDateString(),
-      fechaFin: new Date(p.fechaFin).toLocaleDateString(),
+      fechaCompra: p.fechaCompra ? new Date(p.fechaCompra).toLocaleDateString('es-ES') : '',
+      fechaFin: p.fechaFin ? new Date(p.fechaFin).toLocaleDateString('es-ES') : '',
     })));
     XLSX.utils.book_append_sheet(wb, wsPedidosResina, "Pedidos Resina");
 
     // Convertir pedidos de figuras a worksheet
     const wsPedidosFiguras = XLSX.utils.json_to_sheet(pedidosFiguras.map(p => ({
       ...p,
-      fecha: new Date(p.fecha).toLocaleDateString(),
+      fecha: p.fecha ? new Date(p.fecha).toLocaleDateString('es-ES') : '',
     })));
     XLSX.utils.book_append_sheet(wb, wsPedidosFiguras, "Pedidos Figuras");
 
@@ -41,30 +67,38 @@ const ImportExport = () => {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
 
-      // Importar pedidos de resina
-      const sheetResina = workbook.Sheets["Pedidos Resina"];
-      if (sheetResina) {
-        const pedidosResina = XLSX.utils.sheet_to_json(sheetResina).map(p => ({
-          ...p,
-          fechaCompra: new Date(p.fechaCompra),
-          fechaFin: new Date(p.fechaFin),
-          cantidad: Number(p.cantidad),
-          dineroBruto: Number(p.dineroBruto),
-          id: p.id || Date.now()
-        }));
-        savePedidosResina(pedidosResina);
-      }
+      try {
+        // Importar pedidos de resina
+        const sheetResina = workbook.Sheets["Pedidos Resina"];
+        if (sheetResina) {
+          const pedidosResina = XLSX.utils.sheet_to_json(sheetResina).map(p => ({
+            ...p,
+            id: p.id || Date.now(),
+            fechaCompra: parseDate(p.fechaCompra),
+            fechaFin: parseDate(p.fechaFin),
+            cantidad: Number(p.cantidad),
+            dineroBruto: Number(p.dineroBruto || 0)
+          })).filter(p => p.fechaCompra !== null); // Solo guardar pedidos con fecha válida
+          savePedidosResina(pedidosResina);
+        }
 
-      // Importar pedidos de figuras
-      const sheetFiguras = workbook.Sheets["Pedidos Figuras"];
-      if (sheetFiguras) {
-        const pedidosFiguras = XLSX.utils.sheet_to_json(sheetFiguras).map(p => ({
-          ...p,
-          fecha: new Date(p.fecha),
-          precio: Number(p.precio),
-          id: p.id || Date.now()
-        }));
-        savePedidosFiguras(pedidosFiguras);
+        // Importar pedidos de figuras
+        const sheetFiguras = workbook.Sheets["Pedidos Figuras"];
+        if (sheetFiguras) {
+          const pedidosFiguras = XLSX.utils.sheet_to_json(sheetFiguras).map(p => ({
+            ...p,
+            id: p.id || Date.now(),
+            fecha: parseDate(p.fecha),
+            precio: Number(p.precio || 0)
+          })).filter(p => p.fecha !== null); // Solo guardar pedidos con fecha válida
+          savePedidosFiguras(pedidosFiguras);
+        }
+
+        // Recargar la página para mostrar los datos actualizados
+        window.location.reload();
+      } catch (error) {
+        console.error('Error al importar el archivo:', error);
+        alert('Error al importar el archivo. Por favor, verifica el formato.');
       }
 
       // Limpiar input
