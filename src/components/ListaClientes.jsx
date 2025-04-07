@@ -75,36 +75,72 @@ const ListaClientes = () => {
     direccion: ''
   });
   const [clientePedidos, setClientePedidos] = useState([]);
+  // Añadir estado para controlar el proceso de auto-creación
+  const [autoCreationProcessed, setAutoCreationProcessed] = useState(false);
 
   // Procesar nombres de compradores y convertirlos a clientes si no existen
   const clientesComprador = useMemo(() => {
+    // Si ya hemos procesado la auto-creación o no hay datos cargados, devolver los clientes sin modificar
+    if (autoCreationProcessed || !pedidosFiguras || pedidosFiguras.length === 0 || !clientes) {
+      return clientes || [];
+    }
+    
+    // Verificar si hay datos válidos para procesar
+    if (!Array.isArray(clientes) || !Array.isArray(pedidosFiguras)) {
+      console.warn("Datos inválidos para procesar clientes automáticos", { clientes, pedidosFiguras });
+      setAutoCreationProcessed(true);
+      return clientes || [];
+    }
+    
     const nombresSet = new Set();
     pedidosFiguras.forEach(pedido => {
-      if (pedido.comprador && pedido.comprador.trim()) {
+      if (pedido && pedido.comprador && typeof pedido.comprador === 'string' && pedido.comprador.trim()) {
         nombresSet.add(pedido.comprador.trim());
       }
     });
     
     // Lista de nombres que hay en pedidos pero no en clientes
     const nombresCompradores = Array.from(nombresSet);
-    const nombresNoRegistrados = nombresCompradores.filter(nombre => 
-      !clientes.some(cliente => cliente.nombre.trim().toLowerCase() === nombre.toLowerCase())
-    );
+    const nombresNoRegistrados = nombresCompradores.filter(nombre => {
+      // Verificar si ya existe un cliente con este nombre (comparación insensible a mayúsculas/minúsculas)
+      return !clientes.some(cliente => 
+        cliente && cliente.nombre && 
+        typeof cliente.nombre === 'string' && 
+        cliente.nombre.trim().toLowerCase() === nombre.toLowerCase()
+      );
+    });
     
     // Crear clientes automáticamente para los nombres no registrados
     if (nombresNoRegistrados.length > 0) {
-      nombresNoRegistrados.forEach(nombre => {
-        actualizarCliente({
-          nombre,
-          email: '',
-          telefono: '',
-          direccion: ''
-        });
-      });
+      console.log(`Creando ${nombresNoRegistrados.length} clientes automáticos:`, nombresNoRegistrados);
+      
+      // Limitamos la creación a una operación secuencial para evitar problemas
+      (async () => {
+        try {
+          for (const nombre of nombresNoRegistrados) {
+            // Crear cliente con bandera especial para mostrar notificación
+            await actualizarCliente({
+              nombre,
+              email: '',
+              telefono: '',
+              direccion: '',
+              showNotification: false // No mostrar notificación para estos clientes automáticos
+            });
+          }
+        } catch (err) {
+          console.error("Error al crear clientes automáticos:", err);
+        } finally {
+          // Marcar como procesado incluso si hay errores
+          setAutoCreationProcessed(true);
+        }
+      })();
+    } else {
+      // Si no hay nada que crear, también marcamos como procesado
+      setAutoCreationProcessed(true);
     }
     
     return clientes;
-  }, [pedidosFiguras, clientes, actualizarCliente]);
+  }, [pedidosFiguras, clientes, actualizarCliente, autoCreationProcessed]);
 
   const handleSelectCliente = (cliente) => {
     setSelectedClienteId(cliente.id);

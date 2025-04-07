@@ -171,7 +171,7 @@ const Dashboard = () => {
         {/* Monthly Earnings Chart */}
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" gutterBottom>Ganancias Mensuales (Neto)</Typography>
+            <Typography variant="h6" gutterBottom>Ganancias Mensuales (Bruto)</Typography>
             <Box sx={{ flexGrow: 1, minHeight: 300 }}>
                  <GananciasChart data={gananciasMensuales} />
             </Box>

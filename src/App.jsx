@@ -12,8 +12,11 @@ import {
   Toolbar,
   useMediaQuery,
   Snackbar,
-  Alert
+  Alert,
+  Button,
+  CircularProgress
 } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { es } from 'date-fns/locale';
@@ -24,6 +27,9 @@ import GananciasMensuales from './components/GananciasMensuales';
 import Dashboard from './components/Dashboard';
 import RankingCompradores from './components/RankingCompradores';
 import ListaClientes from './components/ListaClientes';
+import AuthForm from './components/AuthForm';
+import MigracionDatos from './components/MigracionDatos';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { PedidosProvider, PedidosContext } from './context/PedidosContext';
 
 // Crear tema personalizado
@@ -126,127 +132,196 @@ const theme = createTheme({
 });
 
 function App() {
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  // Snackbar Logic Wrapper Component (optional but good practice)
-  const AppWithSnackbar = () => {
-     const { snackbar, closeSnackbar } = useContext(PedidosContext);
-
-     return (
-        <Box sx={{ 
-          minHeight: '100vh',
-          backgroundColor: theme.palette.background.default,
-          pb: { xs: 2, sm: 4 }
-        }}>
-            <AppBar position="static" elevation={0} sx={{ mb: { xs: 2, sm: 4 }, backgroundColor: '#fff' }}>
-              <Toolbar sx={{ flexDirection: { xs: 'column', sm: 'row' }, py: { xs: 2, sm: 1 } }}>
-                <Typography variant="h4" component="h1" sx={{ 
-                  flexGrow: 1,
-                  textAlign: 'center',
-                  mb: { xs: 1, sm: 0 },
-                  color: theme.palette.primary.main
-                }}>
-                  Gestor de Pedidos de Resina
-                </Typography>
-              </Toolbar>
-            </AppBar>
-
-            <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
-              <Box sx={{ 
-                display: 'flex',
-                flexDirection: 'column',
-                gap: { xs: 2, sm: 4 }
-              }}>
-                <Paper 
-                  elevation={0}
-                  sx={{ 
-                    p: { xs: 2, sm: 3 },
-                    backgroundColor: 'rgba(255,255,255,0.8)',
-                    backdropFilter: 'blur(10px)'
-                  }}
-                >
-                  <Box sx={{ mb: { xs: 2, sm: 3 } }}>
-                    <ImportExport />
-                  </Box>
-                </Paper>
-
-                <Dashboard />
-
-                <Paper 
-                  elevation={0}
-                  sx={{ 
-                    p: { xs: 2, sm: 3 },
-                    backgroundColor: 'rgba(255,255,255,0.8)',
-                    backdropFilter: 'blur(10px)'
-                  }}
-                >
-                  <Grid container spacing={{ xs: 2, sm: 4 }}>
-                    <Grid item xs={12} lg={6}>
-                      <Paper 
-                        elevation={0}
-                        sx={{ 
-                          p: { xs: 2, sm: 3 },
-                          height: '100%',
-                          border: '1px solid rgba(0,0,0,0.05)'
-                        }}
-                      >
-                        <Typography variant="h6" gutterBottom>
-                          Pedidos de Resina
-                        </Typography>
-                        <PedidosResina />
-                      </Paper>
-                    </Grid>
-                    <Grid item xs={12} lg={6}>
-                      <Paper 
-                        elevation={0}
-                        sx={{ 
-                          p: { xs: 2, sm: 3 },
-                          height: '100%',
-                          border: '1px solid rgba(0,0,0,0.05)'
-                        }}
-                      >
-                        <Typography variant="h6" gutterBottom>
-                          Pedidos de Figuras
-                        </Typography>
-                        <PedidosFiguras />
-                      </Paper>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <RankingCompradores />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <ListaClientes />
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Box>
-            </Container>
-
-            {/* Snackbar Component */}
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000} // Hide after 6 seconds
-                onClose={closeSnackbar}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }} // Position
-            >
-                <Alert onClose={closeSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-        </Box>
-     );
-  }
-
   return (
     <ThemeProvider theme={theme}>
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
         <CssBaseline />
-        <PedidosProvider>
-           <AppWithSnackbar />
-        </PedidosProvider>
+        <AuthProvider>
+          <PedidosProvider>
+            <AppContent />
+          </PedidosProvider>
+        </AuthProvider>
       </LocalizationProvider>
     </ThemeProvider>
   );
 }
+
+// Componente principal para el contenido de la aplicación
+const AppContent = () => {
+  const { currentUser, isAuthenticated, logout, loading: authLoading } = useAuth();
+  const { loading: pedidosLoading, snackbar, closeSnackbar } = useContext(PedidosContext);
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // Manejar cierre de sesión
+  const handleLogout = async () => {
+    const result = await logout();
+    if (!result.success) {
+      console.error('Error al cerrar sesión:', result.error);
+    }
+  };
+  
+  // Mostrar spinner mientras se carga la autenticación
+  if (authLoading) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: 2
+      }}>
+        <CircularProgress size={60} />
+        <Typography variant="h6">Cargando...</Typography>
+      </Box>
+    );
+  }
+  
+  // Si no está autenticado, mostrar formulario de inicio de sesión
+  if (!isAuthenticated) {
+    return <AuthForm />;
+  }
+  
+  // Si está autenticado, mostrar la aplicación
+  return (
+    <Box sx={{ 
+      minHeight: '100vh',
+      backgroundColor: theme.palette.background.default,
+      pb: { xs: 2, sm: 4 }
+    }}>
+      <AppBar position="static" elevation={0} sx={{ mb: { xs: 2, sm: 4 }, backgroundColor: '#fff' }}>
+        <Toolbar sx={{ flexDirection: { xs: 'column', sm: 'row' }, py: { xs: 2, sm: 1 } }}>
+          <Typography variant="h4" component="h1" sx={{ 
+            flexGrow: 1,
+            textAlign: { xs: 'center', sm: 'left' },
+            mb: { xs: 1, sm: 0 },
+            color: theme.palette.primary.main
+          }}>
+            Gestor de Pedidos de Resina
+          </Typography>
+          
+          {/* Información del usuario y botón de logout */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              {currentUser?.email}
+            </Typography>
+            <Button 
+              variant="outlined" 
+              color="primary" 
+              onClick={handleLogout}
+              startIcon={<LogoutIcon />}
+              size="small"
+            >
+              Cerrar Sesión
+            </Button>
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* Componente de migración de datos */}
+      <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+        <MigracionDatos />
+      </Container>
+
+      {/* Mostrar spinner mientras se cargan los pedidos */}
+      {pedidosLoading ? (
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: 'calc(100vh - 100px)',
+          flexDirection: 'column',
+          gap: 2
+        }}>
+          <CircularProgress size={50} />
+          <Typography variant="h6">Cargando datos...</Typography>
+        </Box>
+      ) : (
+        <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+          <Box sx={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            gap: { xs: 2, sm: 4 }
+          }}>
+            <Paper 
+              elevation={0}
+              sx={{ 
+                p: { xs: 2, sm: 3 },
+                backgroundColor: 'rgba(255,255,255,0.8)',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+                <ImportExport />
+              </Box>
+            </Paper>
+
+            <Dashboard />
+
+            <Paper 
+              elevation={0}
+              sx={{ 
+                p: { xs: 2, sm: 3 },
+                backgroundColor: 'rgba(255,255,255,0.8)',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              <Grid container spacing={{ xs: 2, sm: 4 }}>
+                <Grid item xs={12} lg={6}>
+                  <Paper 
+                    elevation={0}
+                    sx={{ 
+                      p: { xs: 2, sm: 3 },
+                      height: '100%',
+                      border: '1px solid rgba(0,0,0,0.05)'
+                    }}
+                  >
+                    <Typography variant="h6" gutterBottom>
+                      Pedidos de Resina
+                    </Typography>
+                    <PedidosResina />
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} lg={6}>
+                  <Paper 
+                    elevation={0}
+                    sx={{ 
+                      p: { xs: 2, sm: 3 },
+                      height: '100%',
+                      border: '1px solid rgba(0,0,0,0.05)'
+                    }}
+                  >
+                    <Typography variant="h6" gutterBottom>
+                      Pedidos de Figuras
+                    </Typography>
+                    <PedidosFiguras />
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <RankingCompradores />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <ListaClientes />
+                </Grid>
+              </Grid>
+            </Paper>
+          </Box>
+        </Container>
+      )}
+
+      {/* Snackbar Component */}
+      <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000} // Hide after 6 seconds
+          onClose={closeSnackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }} // Position
+      >
+          <Alert onClose={closeSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+              {snackbar.message}
+          </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
 
 export default App;

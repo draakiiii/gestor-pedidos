@@ -1,14 +1,24 @@
-import React, { useContext } from 'react';
-import { Button, Box, Stack, useTheme, useMediaQuery } from '@mui/material';
+import React, { useContext, useState } from 'react';
+import { Button, Box, Stack, useTheme, useMediaQuery, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Typography } from '@mui/material';
 import { Upload as UploadIcon, Download as DownloadIcon } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
-import { getPedidosResina, savePedidosResina, getPedidosFiguras, savePedidosFiguras } from '../utils/storage';
 import { PedidosContext } from '../context/PedidosContext';
+import { AuthContext } from '../context/AuthContext';
+import { 
+  guardarPedidoResina, 
+  guardarPedidoFigura, 
+  obtenerPedidosResina, 
+  obtenerPedidosFiguras 
+} from '../firebase/firestore';
 
 const ImportExport = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { showSnackbar } = useContext(PedidosContext);
+  const { pedidosResina, pedidosFiguras, showSnackbar } = useContext(PedidosContext);
+  const { currentUser } = useContext(AuthContext);
+  const [loading, setLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [importSummary, setImportSummary] = useState({ resina: 0, figuras: 0 });
 
   const parseDate = (dateStr) => {
     if (!dateStr) return null;
@@ -38,9 +48,7 @@ const ImportExport = () => {
 
   const exportToExcel = () => {
     try {
-      const pedidosResina = getPedidosResina();
-      const pedidosFiguras = getPedidosFiguras();
-
+      // Usar los pedidos del contexto (que ya vienen de Firebase)
       const wb = XLSX.utils.book_new();
 
       // Convertir pedidos de resina a worksheet
@@ -75,9 +83,75 @@ const ImportExport = () => {
     }
   };
 
+  const handleImportConfirm = async () => {
+    setDialogOpen(false);
+    setLoading(true);
+    
+    try {
+      // Procesamiento de pedidos de resina
+      if (importSummary.resina > 0) {
+        let errores = 0;
+        
+        await Promise.all(
+          importSummary.resinaData.map(async (pedido) => {
+            try {
+              // Los objetos ya no deberían tener campo id
+              await guardarPedidoResina(pedido, currentUser.uid);
+            } catch (e) {
+              console.error(`Error al guardar pedido resina:`, e);
+              errores++;
+            }
+          })
+        );
+        
+        if (errores > 0) {
+          showSnackbar(`Se encontraron ${errores} errores al importar resina. Ver consola para detalles.`, 'warning');
+        }
+      }
+      
+      // Procesamiento de pedidos de figuras
+      if (importSummary.figuras > 0) {
+        let errores = 0;
+        
+        await Promise.all(
+          importSummary.figurasData.map(async (pedido) => {
+            try {
+              // Los objetos ya no deberían tener campo id
+              await guardarPedidoFigura(pedido, currentUser.uid);
+            } catch (e) {
+              console.error(`Error al guardar pedido figura:`, e);
+              errores++;
+            }
+          })
+        );
+        
+        if (errores > 0) {
+          showSnackbar(`Se encontraron ${errores} errores al importar figuras. Ver consola para detalles.`, 'warning');
+        }
+      }
+      
+      showSnackbar(`Importación completada: ${importSummary.resina} pedidos de resina, ${importSummary.figuras} pedidos de figuras.`, 'success');
+      
+      // Recargar la página para ver los cambios
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (error) {
+      console.error('Error al guardar datos importados:', error);
+      showSnackbar(`Error al guardar datos: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const importFromExcel = (event) => {
+    if (!currentUser) {
+      showSnackbar('Debes iniciar sesión para importar datos', 'error');
+      return;
+    }
+
     const file = event.target.files[0];
     if (!file) return;
+    
+    setLoading(true);
     const reader = new FileReader();
 
     reader.onload = (e) => {
@@ -85,14 +159,14 @@ const ImportExport = () => {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
 
-        let importedResinaCount = 0;
-        let importedFigurasCount = 0;
+        let resinaData = [];
+        let figurasData = [];
 
-        // Importar pedidos de resina
+        // Procesar pedidos de resina
         const sheetResina = workbook.Sheets["Pedidos Resina"];
         if (sheetResina) {
-          const pedidosResina = XLSX.utils.sheet_to_json(sheetResina).map(p => ({
-            id: p.id || Date.now() + Math.random(),
+          resinaData = XLSX.utils.sheet_to_json(sheetResina).map(p => ({
+            // No incluimos el campo id para que Firestore asigne uno automáticamente
             cantidad: Number(p.cantidad || 0),
             dineroBruto: Number(p.dineroBruto || 0),
             coste: Number(p.coste || 0),
@@ -100,34 +174,38 @@ const ImportExport = () => {
             fechaCompra: parseDate(p.fechaCompra),
             fechaFin: parseDate(p.fechaFin),
           })).filter(p => p.cantidad && p.fechaCompra !== null);
-          savePedidosResina(pedidosResina);
-          importedResinaCount = pedidosResina.length;
         }
 
-        // Importar pedidos de figuras
+        // Procesar pedidos de figuras
         const sheetFiguras = workbook.Sheets["Pedidos Figuras"];
         if (sheetFiguras) {
-          const pedidosFiguras = XLSX.utils.sheet_to_json(sheetFiguras).map(p => ({
-            id: p.id || Date.now() + Math.random(),
+          figurasData = XLSX.utils.sheet_to_json(sheetFiguras).map(p => ({
+            // No incluimos el campo id para que Firestore asigne uno automáticamente
             figura: p.figura,
             precio: Number(p.precio || 0),
-            ubicacion: p.ubicacion,
+            ubicacion: p.ubicacion || '',
             fecha: parseDate(p.fecha),
-            comprador: p.comprador,
+            comprador: p.comprador || '',
             entregado: typeof p.entregado === 'boolean' ? p.entregado : (p.entregado === 'TRUE' || p.entregado === 'true')
           })).filter(p => p.figura && p.fecha !== null);
-          savePedidosFiguras(pedidosFiguras);
-          importedFigurasCount = pedidosFiguras.length;
         }
-
-        // Show success notification and reload
-        showSnackbar(`Importación completada: ${importedResinaCount} pedidos de resina, ${importedFigurasCount} pedidos de figuras. Recargando...`, 'success');
-        // Reload after a short delay to allow snackbar to be seen
-        setTimeout(() => window.location.reload(), 1500);
+        
+        // Guardar los datos procesados para usar después de la confirmación
+        setImportSummary({
+          resina: resinaData.length,
+          figuras: figurasData.length,
+          resinaData,
+          figurasData
+        });
+        
+        // Mostrar diálogo de confirmación
+        setDialogOpen(true);
 
       } catch (error) {
-        console.error('Error al importar el archivo:', error);
+        console.error('Error al procesar el archivo:', error);
         showSnackbar(`Error al importar: ${error.message}. Verifica el formato.`, 'error');
+      } finally {
+        setLoading(false);
       }
 
       // Limpiar input
@@ -135,58 +213,90 @@ const ImportExport = () => {
     };
 
     reader.onerror = (error) => {
-        console.error("Error al leer el archivo:", error);
-        showSnackbar('Error al leer el archivo.', 'error');
-         event.target.value = null; // Clear input on error too
+      console.error("Error al leer el archivo:", error);
+      showSnackbar('Error al leer el archivo.', 'error');
+      event.target.value = null; // Clear input on error too
+      setLoading(false);
     }
 
     reader.readAsArrayBuffer(file);
   };
 
   return (
-    <Stack 
-      direction={isMobile ? "column" : "row"} 
-      spacing={2} 
-      justifyContent="center"
-      sx={{
-        width: '100%',
-        '& .MuiButton-root': {
-          minWidth: isMobile ? '100%' : '200px',
-          py: 1.5,
-          backgroundColor: 'white',
-          borderRadius: 2,
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          '&:hover': {
-            backgroundColor: '#f5f5f5',
+    <>
+      <Stack 
+        direction={isMobile ? "column" : "row"} 
+        spacing={2} 
+        justifyContent="center"
+        sx={{
+          width: '100%',
+          '& .MuiButton-root': {
+            minWidth: isMobile ? '100%' : '200px',
+            py: 1.5,
+            backgroundColor: 'white',
+            borderRadius: 2,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            '&:hover': {
+              backgroundColor: '#f5f5f5',
+            }
           }
-        }
-      }}
-    >
-      <Button
-        variant="outlined"
-        startIcon={<DownloadIcon />}
-        onClick={exportToExcel}
-        color="primary"
-        fullWidth={isMobile}
+        }}
       >
-        Exportar a Excel
-      </Button>
-      <Button
-        variant="outlined"
-        component="label"
-        startIcon={<UploadIcon />}
-        color="primary"
-        fullWidth={isMobile}
-      >
-        Importar desde Excel
-        <input
-          type="file"
-          hidden
-          accept=".xlsx,.xls"
-          onChange={importFromExcel}
-        />
-      </Button>
-    </Stack>
+        <Button
+          variant="outlined"
+          startIcon={loading ? <CircularProgress size={24} /> : <DownloadIcon />}
+          onClick={exportToExcel}
+          color="primary"
+          fullWidth={isMobile}
+          disabled={loading || !currentUser}
+        >
+          Exportar a Excel
+        </Button>
+        <Button
+          variant="outlined"
+          component="label"
+          startIcon={loading ? <CircularProgress size={24} /> : <UploadIcon />}
+          color="primary"
+          fullWidth={isMobile}
+          disabled={loading || !currentUser}
+        >
+          Importar desde Excel
+          <input
+            type="file"
+            hidden
+            accept=".xlsx,.xls"
+            onChange={importFromExcel}
+          />
+        </Button>
+      </Stack>
+      
+      {/* Diálogo de confirmación para importar */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+        <DialogTitle>Confirmar Importación</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" gutterBottom>
+            Se importarán los siguientes datos:
+          </Typography>
+          <Typography variant="body2">
+            • {importSummary.resina} pedidos de resina
+          </Typography>
+          <Typography variant="body2">
+            • {importSummary.figuras} pedidos de figuras
+          </Typography>
+          <Typography variant="body1" sx={{ mt: 2 }}>
+            ¿Deseas continuar con la importación?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleImportConfirm} color="primary" variant="contained">
+            Importar
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 

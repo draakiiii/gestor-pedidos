@@ -1,52 +1,5 @@
-// Claves para localStorage
-const STORAGE_KEYS = {
-  PEDIDOS_RESINA: 'pedidosResina',
-  PEDIDOS_FIGURAS: 'pedidosFiguras',
-  CLIENTES: 'clientes',
-};
-
-// Funciones para manejar pedidos de resina
-export const getPedidosResina = () => {
-  const pedidos = localStorage.getItem(STORAGE_KEYS.PEDIDOS_RESINA);
-  console.log('Leyendo pedidos de resina:', pedidos);
-  return pedidos ? JSON.parse(pedidos) : [];
-};
-
-export const savePedidosResina = (pedidos) => {
-  // Convertir las fechas a formato ISO para almacenamiento
-  const pedidosParaGuardar = pedidos.map(p => ({
-    ...p,
-    fechaCompra: p.fechaCompra instanceof Date ? p.fechaCompra.toISOString() : p.fechaCompra,
-    fechaFin: p.fechaFin instanceof Date ? p.fechaFin.toISOString() : p.fechaFin
-  }));
-  console.log('Guardando pedidos de resina:', pedidosParaGuardar);
-  localStorage.setItem(STORAGE_KEYS.PEDIDOS_RESINA, JSON.stringify(pedidosParaGuardar));
-};
-
-// Funciones para manejar pedidos de figuras
-export const getPedidosFiguras = () => {
-  const pedidos = localStorage.getItem(STORAGE_KEYS.PEDIDOS_FIGURAS);
-  return pedidos ? JSON.parse(pedidos) : [];
-};
-
-export const savePedidosFiguras = (pedidos) => {
-  // Convertir las fechas a formato ISO para almacenamiento
-  const pedidosParaGuardar = pedidos.map(p => ({
-    ...p,
-    fecha: p.fecha instanceof Date ? p.fecha.toISOString() : p.fecha
-  }));
-  localStorage.setItem(STORAGE_KEYS.PEDIDOS_FIGURAS, JSON.stringify(pedidosParaGuardar));
-};
-
-// Funciones para gestionar clientes
-export const getClientes = () => {
-  const clientes = localStorage.getItem(STORAGE_KEYS.CLIENTES);
-  return clientes ? JSON.parse(clientes) : [];
-};
-
-export const saveClientes = (clientes) => {
-  localStorage.setItem(STORAGE_KEYS.CLIENTES, JSON.stringify(clientes));
-};
+// Las siguientes funciones son mantenidas solo para compatibilidad, 
+// pero el almacenamiento real ahora se hace con Firebase
 
 // Función para calcular el dinero bruto entre fechas
 export const calcularDineroBruto = (fechaInicio, fechaFin, pedidosFiguras) => {
@@ -73,4 +26,35 @@ export const calcularDineroBrutoPedidoResina = (pedido, pedidosFiguras) => {
     pedido.fechaFin,
     pedidosFiguras
   );
+};
+
+// Estas funciones ya no se usan pero se mantienen para evitar errores en caso de que algo las siga llamando
+export const getPedidosResina = () => {
+  console.warn('getPedidosResina desde localStorage está obsoleto, usar Firebase');
+  return [];
+};
+
+export const savePedidosResina = (pedidos) => {
+  console.warn('savePedidosResina a localStorage está obsoleto, usar Firebase');
+  return false;
+};
+
+export const getPedidosFiguras = () => {
+  console.warn('getPedidosFiguras desde localStorage está obsoleto, usar Firebase');
+  return [];
+};
+
+export const savePedidosFiguras = (pedidos) => {
+  console.warn('savePedidosFiguras a localStorage está obsoleto, usar Firebase');
+  return false;
+};
+
+export const getClientes = () => {
+  console.warn('getClientes desde localStorage está obsoleto, usar Firebase');
+  return [];
+};
+
+export const saveClientes = (clientes) => {
+  console.warn('saveClientes a localStorage está obsoleto, usar Firebase');
+  return false;
 }; 
