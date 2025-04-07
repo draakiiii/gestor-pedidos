@@ -90,8 +90,16 @@ const theme = createTheme({
           textTransform: 'none',
           fontWeight: 500,
           width: {
-            xs: '100%',
+            xs: 'auto',
             sm: 'auto',
+          },
+          padding: {
+            xs: '8px 16px',
+            sm: '8px 22px',
+          },
+          minHeight: {
+            xs: '40px',
+            sm: '40px',
           },
         },
         contained: {
@@ -107,7 +115,7 @@ const theme = createTheme({
           '& .MuiDataGrid-cell': {
             borderColor: '#f0f0f0',
             padding: {
-              xs: '8px 4px',
+              xs: '10px 6px',
               sm: '16px 8px',
             },
             fontSize: {
@@ -124,6 +132,35 @@ const theme = createTheme({
               xs: '300px',
               sm: '400px',
             },
+          },
+        },
+      },
+    },
+    MuiCardContent: {
+      styleOverrides: {
+        root: {
+          padding: {
+            xs: '14px',
+            sm: '16px 24px',
+          },
+          '&:last-child': {
+            paddingBottom: {
+              xs: '14px',
+              sm: '24px',
+            },
+          },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          padding: '8px',
+          // Mejorando tamaño para táctiles
+          '@media (pointer: coarse)': {
+            padding: '10px',
+            minWidth: '44px',
+            minHeight: '44px',
           },
         },
       },
@@ -191,14 +228,6 @@ const AppContent = () => {
     }}>
       <AppBar position="static" elevation={0} sx={{ mb: { xs: 2, sm: 4 }, backgroundColor: '#fff' }}>
         <Toolbar sx={{ flexDirection: { xs: 'column', sm: 'row' }, py: { xs: 2, sm: 1 } }}>
-          <Typography variant="h4" component="h1" sx={{ 
-            flexGrow: 1,
-            textAlign: { xs: 'center', sm: 'left' },
-            mb: { xs: 1, sm: 0 },
-            color: theme.palette.primary.main
-          }}>
-            Gestor de Pedidos de Resina
-          </Typography>
           
           {/* Información del usuario y botón de logout */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -219,7 +248,7 @@ const AppContent = () => {
       </AppBar>
 
       {/* Componente de migración de datos */}
-      <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+      <Container maxWidth="xl" sx={{ px: { xs: 1.5, sm: 2, md: 3 } }}>
         <MigracionDatos />
       </Container>
 
@@ -237,11 +266,11 @@ const AppContent = () => {
           <Typography variant="h6">Cargando datos...</Typography>
         </Box>
       ) : (
-        <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+        <Container maxWidth="xl" sx={{ px: { xs: 1.5, sm: 2, md: 3 } }}>
           <Box sx={{ 
             display: 'flex',
             flexDirection: 'column',
-            gap: { xs: 2, sm: 4 }
+            gap: { xs: 3, sm: 4 }
           }}>
             <Paper 
               elevation={0}
@@ -266,17 +295,26 @@ const AppContent = () => {
                 backdropFilter: 'blur(10px)'
               }}
             >
-              <Grid container spacing={{ xs: 2, sm: 4 }}>
+              <Grid container spacing={{ xs: 3, sm: 4 }}>
                 <Grid item xs={12} lg={6}>
                   <Paper 
                     elevation={0}
                     sx={{ 
                       p: { xs: 2, sm: 3 },
                       height: '100%',
-                      border: '1px solid rgba(0,0,0,0.05)'
+                      border: '1px solid rgba(0,0,0,0.05)',
+                      borderRadius: { xs: 1.5, sm: 2 }
                     }}
                   >
-                    <Typography variant="h6" gutterBottom>
+                    <Typography 
+                      variant="h6" 
+                      gutterBottom
+                      sx={{
+                        mb: { xs: 2, sm: 3 },
+                        borderBottom: '1px solid rgba(0,0,0,0.08)',
+                        pb: 1
+                      }}
+                    >
                       Pedidos de Resina
                     </Typography>
                     <PedidosResina />
@@ -288,10 +326,19 @@ const AppContent = () => {
                     sx={{ 
                       p: { xs: 2, sm: 3 },
                       height: '100%',
-                      border: '1px solid rgba(0,0,0,0.05)'
+                      border: '1px solid rgba(0,0,0,0.05)',
+                      borderRadius: { xs: 1.5, sm: 2 }
                     }}
                   >
-                    <Typography variant="h6" gutterBottom>
+                    <Typography 
+                      variant="h6" 
+                      gutterBottom
+                      sx={{
+                        mb: { xs: 2, sm: 3 },
+                        borderBottom: '1px solid rgba(0,0,0,0.08)',
+                        pb: 1
+                      }}
+                    >
                       Pedidos de Figuras
                     </Typography>
                     <PedidosFiguras />

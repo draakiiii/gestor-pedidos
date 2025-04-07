@@ -68,7 +68,6 @@ const Dashboard = () => {
     if (!pedidosPorGrupo[grupoKey]) {
       pedidosPorGrupo[grupoKey] = {
         id: grupoKey,
-        tipo: 'Paquete',
         fechaOrden: pedido.fecha,
         comprador: compradorKey,
         nombreMostrado: `Pedido de ${compradorKey}`,
@@ -146,7 +145,6 @@ const Dashboard = () => {
                             <Typography variant="body1" component="span" sx={{ fontWeight: 500, flexGrow: 1, mr: 1 }} noWrap>
                                 {pedido.nombreMostrado}
                             </Typography>
-                            <Chip label={pedido.tipo} size="small" color="info" sx={{ mr: 1, fontSize: '0.75rem' }}/>
                             <Typography variant="body2" color="text.secondary">
                               {format(pedido.fechaOrden, 'dd/MM/yy')}
                             </Typography>

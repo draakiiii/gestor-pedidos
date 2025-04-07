@@ -19,7 +19,8 @@ import {
   Chip,
   Checkbox,
   FormControlLabel,
-  Autocomplete
+  Autocomplete,
+  Grid
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -261,84 +262,117 @@ const PedidosFiguras = () => {
   ];
 
   const MobileCard = ({ pedido }) => {
-    const ubicacion = UBICACIONES.find(u => u.codigo === pedido.ubicacion);
+    const ubicacion = UBICACIONES.find(u => u.codigo === pedido.ubicacion) || { nombre: pedido.ubicacion, codigo: pedido.ubicacion };
     
     return (
-      <Card sx={{ mb: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-        <CardContent>
-          <Stack spacing={2}>
-            <Typography variant="h6" noWrap sx={{ mb: 1 }}>
-              {pedido.figura}
-            </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" color="text.secondary">
+      <Card 
+        sx={{ 
+          mb: 2, 
+          boxShadow: '0 3px 8px rgba(0,0,0,0.08)',
+          borderRadius: 2,
+          overflow: 'hidden',
+          border: '1px solid rgba(0,0,0,0.05)'
+        }}
+      >
+        <Box 
+          sx={{ 
+            p: 0.8, 
+            backgroundColor: getUbicacionColor(pedido.ubicacion),
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 'bold', flexGrow: 1, textAlign: 'center' }}>
+            {ubicacion.nombre}
+          </Typography>
+          <Box sx={{ ml: 'auto' }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={pedido.entregado || false}
+                  onChange={(event) => handleEntregadoChange(pedido, event.target.checked)}
+                  size="small"
+                  sx={{ 
+                    color: 'white',
+                    '&.Mui-checked': { color: 'white' }
+                  }}
+                />
+              }
+              label={
+                <Typography sx={{ color: 'white', fontSize: '0.75rem' }}>
+                  Entregado
+                </Typography>
+              }
+              sx={{ margin: 0 }}
+            />
+          </Box>
+        </Box>
+        <CardContent sx={{ pt: 2, pb: 1 }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: 'primary.main' }}>
+            {pedido.figura}
+          </Typography>
+          
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Fecha
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                {new Date(pedido.fecha).toLocaleDateString('es-ES')}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                 Precio
               </Typography>
-              <Typography variant="h6" color="primary">
+              <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                 {new Intl.NumberFormat('es-ES', {
                   style: 'currency',
                   currency: 'EUR'
                 }).format(pedido.precio)}
               </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Ubicación
-              </Typography>
-              <Chip
-                label={ubicacion ? ubicacion.nombre : pedido.ubicacion}
-                size="small"
-                sx={{
-                  backgroundColor: getUbicacionColor(pedido.ubicacion),
-                  color: 'white'
-                }}
-              />
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Fecha
-              </Typography>
-              <Typography>
-                {new Date(pedido.fecha).toLocaleDateString('es-ES')}
-              </Typography>
-            </Box>
+            </Grid>
+            
             {pedido.comprador && (
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="subtitle2" color="text.secondary">
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                   Comprador
                 </Typography>
-                <Typography>
+                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
                   {pedido.comprador}
                 </Typography>
-              </Box>
+              </Grid>
             )}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Entregado
-              </Typography>
-              <Checkbox
-                checked={pedido.entregado || false}
-                onChange={(event) => handleEntregadoChange(pedido, event.target.checked)}
-                size="small"
-              />
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-              <IconButton 
-                onClick={() => handleEdit(pedido)}
-                size="small"
-                color="primary"
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton 
-                onClick={() => eliminarPedidoFigura(pedido.id)}
-                size="small"
-                color="error"
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          </Stack>
+          </Grid>
+          
+          {/* Acciones */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            gap: 1, 
+            mt: 2,
+            borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+            pt: 1.5
+          }}>
+            <Button 
+              variant="outlined"
+              size="small"
+              startIcon={<EditIcon fontSize="small" />}
+              onClick={() => handleEdit(pedido)}
+            >
+              Editar
+            </Button>
+            <Button 
+              variant="outlined"
+              size="small"
+              color="error"
+              startIcon={<DeleteIcon fontSize="small" />}
+              onClick={() => eliminarPedidoFigura(pedido.id)}
+            >
+              Eliminar
+            </Button>
+          </Box>
         </CardContent>
       </Card>
     );

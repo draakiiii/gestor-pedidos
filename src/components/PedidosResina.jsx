@@ -17,7 +17,8 @@ import {
   Stack,
   MenuItem,
   Chip,
-  InputAdornment
+  InputAdornment,
+  Grid
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -230,56 +231,128 @@ const PedidosResina = () => {
   ];
 
   const MobileCard = ({ pedido }) => {
+    const beneficioNeto = (pedido.dineroBruto || 0) - (pedido.coste || 0);
+    const estadoData = ESTADOS.find(e => e.codigo === pedido.estado) || { nombre: 'Desconocido', color: '#757575' };
+    
     return (
-      <Card sx={{ mb: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-        <CardContent>
-          <Stack spacing={1.5}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" color="text.secondary">F. Compra</Typography>
-              <Typography>{pedido.fechaCompra ? new Date(pedido.fechaCompra).toLocaleDateString('es-ES') : '-'}</Typography>
-            </Box>
-             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" color="text.secondary">F. Fin</Typography>
-              <Typography>{pedido.fechaFin ? new Date(pedido.fechaFin).toLocaleDateString('es-ES') : '-'}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" color="text.secondary">Cantidad</Typography>
-              <Typography>{pedido.cantidad}</Typography>
-            </Box>
-             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" color="text.secondary">Ing. Bruto</Typography>
-              <Typography>{new Intl.NumberFormat('es-ES', {
-                style: 'currency',
-                currency: 'EUR'
-              }).format(pedido.dineroBruto)}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" color="text.secondary">Coste</Typography>
-              <Typography>{new Intl.NumberFormat('es-ES', {
-                style: 'currency',
-                currency: 'EUR'
-              }).format(pedido.coste || 0)}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" color="text.secondary">Benef. Neto</Typography>
-              <Typography sx={{ fontWeight: 'bold' }}>{new Intl.NumberFormat('es-ES', {
-                style: 'currency',
-                currency: 'EUR'
-              }).format((pedido.dineroBruto || 0) - (pedido.coste || 0))}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" color="text.secondary">Estado</Typography>
-              {getEstadoChip(pedido.estado)}
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-                <IconButton onClick={() => handleEdit(pedido)} size="small" color="primary">
-                    <EditIcon fontSize="small" />
-                </IconButton>
-                <IconButton onClick={() => eliminarPedidoResina(pedido.id)} size="small" color="error">
-                    <DeleteIcon fontSize="small" />
-                </IconButton>
-            </Box>
-          </Stack>
+      <Card 
+        sx={{ 
+          mb: 2, 
+          boxShadow: '0 3px 8px rgba(0,0,0,0.08)',
+          borderRadius: 2,
+          overflow: 'hidden',
+          border: '1px solid rgba(0,0,0,0.05)'
+        }}
+      >
+        <Box 
+          sx={{ 
+            p: 0.5, 
+            backgroundColor: estadoData.color,
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 'bold' }}>
+            {estadoData.nombre}
+          </Typography>
+        </Box>
+        <CardContent sx={{ pt: 2, pb: 1 }}>
+          <Grid container spacing={1.5}>
+            {/* Fechas */}
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Fecha Compra
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                {pedido.fechaCompra ? new Date(pedido.fechaCompra).toLocaleDateString('es-ES') : '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Fecha Fin
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                {pedido.fechaFin ? new Date(pedido.fechaFin).toLocaleDateString('es-ES') : '-'}
+              </Typography>
+            </Grid>
+            
+            {/* Datos económicos */}
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Cantidad
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                {pedido.cantidad}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Ingresos Brutos
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                {new Intl.NumberFormat('es-ES', {
+                  style: 'currency',
+                  currency: 'EUR'
+                }).format(pedido.dineroBruto || 0)}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Coste
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                {new Intl.NumberFormat('es-ES', {
+                  style: 'currency',
+                  currency: 'EUR'
+                }).format(pedido.coste || 0)}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Beneficio Neto
+              </Typography>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontWeight: 'bold',
+                  color: beneficioNeto > 0 ? 'success.main' : beneficioNeto < 0 ? 'error.main' : 'text.primary'
+                }}
+              >
+                {new Intl.NumberFormat('es-ES', {
+                  style: 'currency',
+                  currency: 'EUR'
+                }).format(beneficioNeto)}
+              </Typography>
+            </Grid>
+          </Grid>
+          
+          {/* Acciones */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            gap: 1, 
+            mt: 1.5,
+            borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+            pt: 1
+          }}>
+            <Button 
+              variant="outlined"
+              size="small"
+              startIcon={<EditIcon fontSize="small" />}
+              onClick={() => handleEdit(pedido)}
+            >
+              Editar
+            </Button>
+            <Button 
+              variant="outlined"
+              size="small"
+              color="error"
+              startIcon={<DeleteIcon fontSize="small" />}
+              onClick={() => eliminarPedidoResina(pedido.id)}
+            >
+              Eliminar
+            </Button>
+          </Box>
         </CardContent>
       </Card>
     );
