@@ -93,25 +93,25 @@ const Dashboard = () => {
 
   // --- Render Component ---
   return (
-    <Box sx={{ flexGrow: 1, mb: 4 }}>
+    <Box sx={{ flexGrow: 1, mb: 4, width: '100%' }}>
         <Typography variant="h5" gutterBottom sx={{ mb: 3, color: 'primary.dark', fontWeight: 'bold' }}>
             Resumen General
         </Typography>
       <Grid container spacing={3}>
         {/* Metric Cards */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3} lg={3}>
           <Paper elevation={2} sx={{ p: 2, textAlign: 'center', height: '100%' }}>
             <Typography variant="h6" color="text.secondary">Pendientes</Typography>
             <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>{totalPendientes}</Typography>
           </Paper>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3} lg={3}>
           <Paper elevation={2} sx={{ p: 2, textAlign: 'center', height: '100%' }}>
             <Typography variant="h6" color="text.secondary">Entregados</Typography>
             <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>{totalEntregados}</Typography>
           </Paper>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3} lg={3}>
           <Paper elevation={2} sx={{ p: 2, textAlign: 'center', height: '100%' }}>
             <Typography variant="h6" color="text.secondary">Ingresos Mes</Typography>
              <Typography variant="h4" sx={{ fontWeight: 'bold', color: ingresosMesActual >= 0 ? 'success.dark' : 'error.main' }}>
@@ -119,7 +119,7 @@ const Dashboard = () => {
             </Typography>
           </Paper>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3} lg={3}>
           <Paper elevation={2} sx={{ p: 2, textAlign: 'center', height: '100%' }}>
             <Typography variant="h6" color="text.secondary">Ingresos Año</Typography>
              <Typography variant="h4" sx={{ fontWeight: 'bold', color: ingresosAnioActual >= 0 ? 'success.dark' : 'error.main' }}>
@@ -129,13 +129,13 @@ const Dashboard = () => {
         </Grid>
 
         {/* Pedidos Recientes List */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
+        <Grid item xs={12} md={6} lg={6}>
+          <Paper elevation={2} sx={{ p: 2, height: '100%', minHeight: 350 }}>
             <Typography variant="h6" gutterBottom>Últimos Pedidos</Typography>
             {pedidosRecientes.length === 0 ? (
               <Typography>No hay pedidos recientes.</Typography>
             ) : (
-              <List dense sx={{ maxHeight: 300, overflow: 'auto' }}>
+              <List dense sx={{ maxHeight: 350, overflow: 'auto' }}>
                 {pedidosRecientes.map((pedido, index) => (
                   <React.Fragment key={pedido.id || index}>
                     <ListItem alignItems="flex-start">
@@ -167,10 +167,10 @@ const Dashboard = () => {
         </Grid>
 
         {/* Monthly Earnings Chart */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={6} lg={6}>
           <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Typography variant="h6" gutterBottom>Ganancias Mensuales (Bruto)</Typography>
-            <Box sx={{ flexGrow: 1, minHeight: 300 }}>
+            <Box sx={{ flexGrow: 1, minHeight: 350 }}>
                  <GananciasChart data={gananciasMensuales} />
             </Box>
           </Paper>

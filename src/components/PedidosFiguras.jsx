@@ -423,7 +423,8 @@ const PedidosFiguras = () => {
             },
             width: '100%',
             '& .MuiDataGrid-main': {
-              width: '100%'
+              width: '100%',
+              maxWidth: '100%'
             },
             '& .MuiDataGrid-virtualScroller': {
               overflow: 'auto !important',
@@ -431,6 +432,12 @@ const PedidosFiguras = () => {
             },
             '& .MuiDataGrid-row': {
               minHeight: '48px !important'
+            },
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: '#f5f5f5',
+            },
+            '& .MuiDataGrid-footerContainer': {
+              backgroundColor: '#f5f5f5',
             }
           }}
           initialState={{

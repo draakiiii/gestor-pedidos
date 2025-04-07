@@ -395,6 +395,17 @@ const PedidosResina = () => {
               overflow: 'auto !important',
               minHeight: 500
             },
+            width: '100%',
+            '& .MuiDataGrid-main': {
+              width: '100%',
+              maxWidth: '100%'
+            },
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: '#f5f5f5',
+            },
+            '& .MuiDataGrid-footerContainer': {
+              backgroundColor: '#f5f5f5',
+            }
           }}
         />
       )}

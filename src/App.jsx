@@ -248,7 +248,7 @@ const AppContent = () => {
       </AppBar>
 
       {/* Componente de migración de datos */}
-      <Container maxWidth="xl" sx={{ px: { xs: 1.5, sm: 2, md: 3 } }}>
+      <Container maxWidth={false} sx={{ px: { xs: 1.5, sm: 2, md: 3, lg: 4 } }}>
         <MigracionDatos />
       </Container>
 
@@ -266,7 +266,7 @@ const AppContent = () => {
           <Typography variant="h6">Cargando datos...</Typography>
         </Box>
       ) : (
-        <Container maxWidth="xl" sx={{ px: { xs: 1.5, sm: 2, md: 3 } }}>
+        <Container maxWidth={false} sx={{ px: { xs: 1.5, sm: 2, md: 3, lg: 4 } }}>
           <Box sx={{ 
             display: 'flex',
             flexDirection: 'column',
@@ -296,7 +296,7 @@ const AppContent = () => {
               }}
             >
               <Grid container spacing={{ xs: 3, sm: 4 }}>
-                <Grid item xs={12} lg={6}>
+                <Grid item xs={12} lg={6} xl={6}>
                   <Paper 
                     elevation={0}
                     sx={{ 
@@ -320,7 +320,7 @@ const AppContent = () => {
                     <PedidosResina />
                   </Paper>
                 </Grid>
-                <Grid item xs={12} lg={6}>
+                <Grid item xs={12} lg={6} xl={6}>
                   <Paper 
                     elevation={0}
                     sx={{ 
@@ -344,10 +344,10 @@ const AppContent = () => {
                     <PedidosFiguras />
                   </Paper>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={6} lg={6} xl={6}>
                   <RankingCompradores />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={6} lg={6} xl={6}>
                   <ListaClientes />
                 </Grid>
               </Grid>

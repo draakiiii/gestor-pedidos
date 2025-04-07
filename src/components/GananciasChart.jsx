@@ -66,33 +66,30 @@ const GananciasChart = ({ data }) => {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height="100%" minHeight={350}>
       <BarChart
         data={chartData}
         margin={{
-          top: 5,
-          right: 20, // Add some right margin for labels
-          left: 10, // Add some left margin for labels
-          bottom: 5,
+          top: 15,
+          right: 25, // Add some right margin for labels
+          left: 15, // Add some left margin for labels
+          bottom: 10,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis 
             dataKey="mesNombre" 
-            tick={{ fontSize: 11 }} // Smaller font size for month labels
-            // angle={-30} // Angle labels if they overlap
-            // textAnchor="end"
+            tick={{ fontSize: 12 }} // Slightly larger font for better readability
             interval={0} // Show all labels initially, adjust if needed
             height={50} // Increase height if labels are angled
         />
         <YAxis 
             tickFormatter={formatCurrency} 
-            tick={{ fontSize: 11 }} // Smaller font size for currency
-            width={80} // Adjust width for currency labels
+            tick={{ fontSize: 12 }} // Slightly larger font for better readability
+            width={85} // Adjust width for currency labels
          />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(206, 206, 206, 0.2)' }}/>
-        {/* <Legend /> */}
-        <Bar dataKey="Ganancia" fill={theme.palette.primary.main} />
+        <Bar dataKey="Ganancia" fill={theme.palette.primary.main} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
