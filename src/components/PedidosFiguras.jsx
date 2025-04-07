@@ -18,7 +18,8 @@ import {
   Stack,
   Chip,
   Checkbox,
-  FormControlLabel
+  FormControlLabel,
+  Autocomplete
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -35,18 +36,49 @@ const UBICACIONES = [
 const PedidosFiguras = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { pedidosFiguras, actualizarPedidosFiguras, eliminarPedidoFigura } = usePedidos();
+  const { pedidosFiguras, actualizarPedidosFiguras, eliminarPedidoFigura, clientes, actualizarCliente } = usePedidos();
   const [openDialog, setOpenDialog] = useState(false);
   const [currentPedido, setCurrentPedido] = useState(null);
   const [figura, setFigura] = useState('');
   const [precio, setPrecio] = useState('');
   const [ubicacion, setUbicacion] = useState('');
   const [fecha, setFecha] = useState(null);
-  const [comprador, setComprador] = useState('');
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [entregado, setEntregado] = useState(false);
 
   const handleSave = () => {
     if (!figura || !precio || !ubicacion || !fecha) return;
+
+    // Si el cliente seleccionado es un string (nuevo cliente), lo creamos
+    let clienteId = null;
+    let nombreComprador = "";
+
+    if (clienteSeleccionado) {
+      if (typeof clienteSeleccionado === 'string') {
+        // Es un nuevo cliente, lo creamos
+        const nuevoCliente = {
+          nombre: clienteSeleccionado,
+          email: '',
+          telefono: '',
+          direccion: ''
+        };
+        actualizarCliente(nuevoCliente);
+        
+        // Intentamos encontrar el cliente recién creado por su nombre
+        const clienteCreado = clientes.find(c => c.nombre === clienteSeleccionado);
+        if (clienteCreado) {
+          clienteId = clienteCreado.id;
+          nombreComprador = clienteCreado.nombre;
+        } else {
+          // Si no lo encontramos (puede pasar por asincronía), usamos solo el nombre
+          nombreComprador = clienteSeleccionado;
+        }
+      } else {
+        // Es un cliente existente
+        clienteId = clienteSeleccionado.id;
+        nombreComprador = clienteSeleccionado.nombre;
+      }
+    }
 
     const newPedido = {
       id: currentPedido?.id || Date.now(),
@@ -54,7 +86,8 @@ const PedidosFiguras = () => {
       precio: Number(precio),
       ubicacion,
       fecha,
-      comprador: comprador || null,
+      comprador: nombreComprador,
+      clienteId: clienteId, // Guardamos el ID del cliente si existe
       entregado: entregado
     };
 
@@ -68,7 +101,13 @@ const PedidosFiguras = () => {
     setPrecio(pedido.precio.toString());
     setUbicacion(pedido.ubicacion);
     setFecha(pedido.fecha);
-    setComprador(pedido.comprador || '');
+    
+    // Buscamos el cliente por ID o por nombre
+    const cliente = pedido.clienteId 
+      ? clientes.find(c => c.id === pedido.clienteId)
+      : clientes.find(c => c.nombre === pedido.comprador);
+    
+    setClienteSeleccionado(cliente || null);
     setEntregado(pedido.entregado || false);
     setOpenDialog(true);
   };
@@ -80,7 +119,7 @@ const PedidosFiguras = () => {
     setPrecio('');
     setUbicacion('');
     setFecha(null);
-    setComprador('');
+    setClienteSeleccionado(null);
     setEntregado(false);
   };
 
@@ -427,12 +466,34 @@ const PedidosFiguras = () => {
               renderInput={(params) => <TextField {...params} fullWidth required />}
               inputFormat="dd/MM/yyyy"
             />
-            <TextField
-              label="Comprador (Opcional)"
-              value={comprador}
-              onChange={(e) => setComprador(e.target.value)}
-              fullWidth
-              placeholder="Ej: Desiree"
+            <Autocomplete
+              id="cliente-autocomplete"
+              options={clientes}
+              getOptionLabel={(option) => {
+                // Manejar casos cuando option es string (nueva entrada) u objeto (cliente existente)
+                return typeof option === 'string' ? option : option.nombre || '';
+              }}
+              isOptionEqualToValue={(option, value) => {
+                if (typeof option === 'string' || typeof value === 'string') {
+                  return option === value;
+                }
+                return option.id === value.id;
+              }}
+              value={clienteSeleccionado}
+              onChange={(event, newValue) => {
+                setClienteSeleccionado(newValue);
+              }}
+              freeSolo
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Cliente"
+                  variant="outlined"
+                  fullWidth
+                  margin="dense"
+                  sx={{ mb: 2 }}
+                />
+              )}
             />
             <FormControlLabel
               control={

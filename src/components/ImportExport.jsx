@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Button, Box, Stack, useTheme, useMediaQuery } from '@mui/material';
 import { Upload as UploadIcon, Download as DownloadIcon } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 import { getPedidosResina, savePedidosResina, getPedidosFiguras, savePedidosFiguras } from '../utils/storage';
+import { PedidosContext } from '../context/PedidosContext';
 
 const ImportExport = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { showSnackbar } = useContext(PedidosContext);
 
   const parseDate = (dateStr) => {
     if (!dateStr) return null;
@@ -35,75 +37,108 @@ const ImportExport = () => {
   };
 
   const exportToExcel = () => {
-    const pedidosResina = getPedidosResina();
-    const pedidosFiguras = getPedidosFiguras();
+    try {
+      const pedidosResina = getPedidosResina();
+      const pedidosFiguras = getPedidosFiguras();
 
-    const wb = XLSX.utils.book_new();
+      const wb = XLSX.utils.book_new();
 
-    // Convertir pedidos de resina a worksheet
-    const wsPedidosResina = XLSX.utils.json_to_sheet(pedidosResina.map(p => ({
-      ...p,
-      fechaCompra: p.fechaCompra ? new Date(p.fechaCompra).toLocaleDateString('es-ES') : '',
-      fechaFin: p.fechaFin ? new Date(p.fechaFin).toLocaleDateString('es-ES') : '',
-    })));
-    XLSX.utils.book_append_sheet(wb, wsPedidosResina, "Pedidos Resina");
+      // Convertir pedidos de resina a worksheet
+      const wsPedidosResina = XLSX.utils.json_to_sheet(pedidosResina.map(p => ({
+        id: p.id,
+        cantidad: p.cantidad,
+        dineroBruto: p.dineroBruto,
+        coste: p.coste,
+        estado: p.estado,
+        fechaCompra: p.fechaCompra ? new Date(p.fechaCompra).toLocaleDateString('es-ES') : '',
+        fechaFin: p.fechaFin ? new Date(p.fechaFin).toLocaleDateString('es-ES') : '',
+      })));
+      XLSX.utils.book_append_sheet(wb, wsPedidosResina, "Pedidos Resina");
 
-    // Convertir pedidos de figuras a worksheet
-    const wsPedidosFiguras = XLSX.utils.json_to_sheet(pedidosFiguras.map(p => ({
-      ...p,
-      fecha: p.fecha ? new Date(p.fecha).toLocaleDateString('es-ES') : '',
-    })));
-    XLSX.utils.book_append_sheet(wb, wsPedidosFiguras, "Pedidos Figuras");
+      // Convertir pedidos de figuras a worksheet
+      const wsPedidosFiguras = XLSX.utils.json_to_sheet(pedidosFiguras.map(p => ({
+        id: p.id,
+        figura: p.figura,
+        precio: p.precio,
+        ubicacion: p.ubicacion,
+        fecha: p.fecha ? new Date(p.fecha).toLocaleDateString('es-ES') : '',
+        comprador: p.comprador,
+        entregado: p.entregado
+      })));
+      XLSX.utils.book_append_sheet(wb, wsPedidosFiguras, "Pedidos Figuras");
 
-    // Guardar archivo
-    XLSX.writeFile(wb, "pedidos.xlsx");
+      XLSX.writeFile(wb, "pedidos.xlsx");
+      showSnackbar('Datos exportados a pedidos.xlsx con éxito.', 'success');
+    } catch (error) {
+      console.error("Error al exportar a Excel:", error);
+      showSnackbar(`Error al exportar: ${error.message}`, 'error');
+    }
   };
 
   const importFromExcel = (event) => {
     const file = event.target.files[0];
+    if (!file) return;
     const reader = new FileReader();
 
     reader.onload = (e) => {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-
       try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        let importedResinaCount = 0;
+        let importedFigurasCount = 0;
+
         // Importar pedidos de resina
         const sheetResina = workbook.Sheets["Pedidos Resina"];
         if (sheetResina) {
           const pedidosResina = XLSX.utils.sheet_to_json(sheetResina).map(p => ({
-            ...p,
-            id: p.id || Date.now(),
+            id: p.id || Date.now() + Math.random(),
+            cantidad: Number(p.cantidad || 0),
+            dineroBruto: Number(p.dineroBruto || 0),
+            coste: Number(p.coste || 0),
+            estado: p.estado || 'P',
             fechaCompra: parseDate(p.fechaCompra),
             fechaFin: parseDate(p.fechaFin),
-            cantidad: Number(p.cantidad),
-            dineroBruto: Number(p.dineroBruto || 0)
-          })).filter(p => p.fechaCompra !== null); // Solo guardar pedidos con fecha válida
+          })).filter(p => p.cantidad && p.fechaCompra !== null);
           savePedidosResina(pedidosResina);
+          importedResinaCount = pedidosResina.length;
         }
 
         // Importar pedidos de figuras
         const sheetFiguras = workbook.Sheets["Pedidos Figuras"];
         if (sheetFiguras) {
           const pedidosFiguras = XLSX.utils.sheet_to_json(sheetFiguras).map(p => ({
-            ...p,
-            id: p.id || Date.now(),
+            id: p.id || Date.now() + Math.random(),
+            figura: p.figura,
+            precio: Number(p.precio || 0),
+            ubicacion: p.ubicacion,
             fecha: parseDate(p.fecha),
-            precio: Number(p.precio || 0)
-          })).filter(p => p.fecha !== null); // Solo guardar pedidos con fecha válida
+            comprador: p.comprador,
+            entregado: typeof p.entregado === 'boolean' ? p.entregado : (p.entregado === 'TRUE' || p.entregado === 'true')
+          })).filter(p => p.figura && p.fecha !== null);
           savePedidosFiguras(pedidosFiguras);
+          importedFigurasCount = pedidosFiguras.length;
         }
 
-        // Recargar la página para mostrar los datos actualizados
-        window.location.reload();
+        // Show success notification and reload
+        showSnackbar(`Importación completada: ${importedResinaCount} pedidos de resina, ${importedFigurasCount} pedidos de figuras. Recargando...`, 'success');
+        // Reload after a short delay to allow snackbar to be seen
+        setTimeout(() => window.location.reload(), 1500);
+
       } catch (error) {
         console.error('Error al importar el archivo:', error);
-        alert('Error al importar el archivo. Por favor, verifica el formato.');
+        showSnackbar(`Error al importar: ${error.message}. Verifica el formato.`, 'error');
       }
 
       // Limpiar input
       event.target.value = null;
     };
+
+    reader.onerror = (error) => {
+        console.error("Error al leer el archivo:", error);
+        showSnackbar('Error al leer el archivo.', 'error');
+         event.target.value = null; // Clear input on error too
+    }
 
     reader.readAsArrayBuffer(file);
   };

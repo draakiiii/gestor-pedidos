@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { 
   CssBaseline, 
   Box, 
@@ -10,7 +10,9 @@ import {
   Grid,
   AppBar,
   Toolbar,
-  useMediaQuery
+  useMediaQuery,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -19,7 +21,10 @@ import PedidosResina from './components/PedidosResina';
 import PedidosFiguras from './components/PedidosFiguras';
 import ImportExport from './components/ImportExport';
 import GananciasMensuales from './components/GananciasMensuales';
-import { PedidosProvider } from './context/PedidosContext';
+import Dashboard from './components/Dashboard';
+import RankingCompradores from './components/RankingCompradores';
+import ListaClientes from './components/ListaClientes';
+import { PedidosProvider, PedidosContext } from './context/PedidosContext';
 
 // Crear tema personalizado
 const theme = createTheme({
@@ -122,17 +127,17 @@ const theme = createTheme({
 
 function App() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // Snackbar Logic Wrapper Component (optional but good practice)
+  const AppWithSnackbar = () => {
+     const { snackbar, closeSnackbar } = useContext(PedidosContext);
 
-  return (
-    <ThemeProvider theme={theme}>
-      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
-        <CssBaseline />
-        <PedidosProvider>
-          <Box sx={{ 
-            minHeight: '100vh',
-            backgroundColor: theme.palette.background.default,
-            pb: { xs: 2, sm: 4 }
-          }}>
+     return (
+        <Box sx={{ 
+          minHeight: '100vh',
+          backgroundColor: theme.palette.background.default,
+          pb: { xs: 2, sm: 4 }
+        }}>
             <AppBar position="static" elevation={0} sx={{ mb: { xs: 2, sm: 4 }, backgroundColor: '#fff' }}>
               <Toolbar sx={{ flexDirection: { xs: 'column', sm: 'row' }, py: { xs: 2, sm: 1 } }}>
                 <Typography variant="h4" component="h1" sx={{ 
@@ -163,9 +168,20 @@ function App() {
                   <Box sx={{ mb: { xs: 2, sm: 3 } }}>
                     <ImportExport />
                   </Box>
+                </Paper>
 
+                <Dashboard />
+
+                <Paper 
+                  elevation={0}
+                  sx={{ 
+                    p: { xs: 2, sm: 3 },
+                    backgroundColor: 'rgba(255,255,255,0.8)',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                >
                   <Grid container spacing={{ xs: 2, sm: 4 }}>
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12} lg={6}>
                       <Paper 
                         elevation={0}
                         sx={{ 
@@ -180,7 +196,7 @@ function App() {
                         <PedidosResina />
                       </Paper>
                     </Grid>
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12} lg={6}>
                       <Paper 
                         elevation={0}
                         sx={{ 
@@ -195,14 +211,38 @@ function App() {
                         <PedidosFiguras />
                       </Paper>
                     </Grid>
-                    <Grid item xs={12}>
-                      <GananciasMensuales />
+                    <Grid item xs={12} md={6}>
+                      <RankingCompradores />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <ListaClientes />
                     </Grid>
                   </Grid>
                 </Paper>
               </Box>
             </Container>
-          </Box>
+
+            {/* Snackbar Component */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000} // Hide after 6 seconds
+                onClose={closeSnackbar}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }} // Position
+            >
+                <Alert onClose={closeSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
+        </Box>
+     );
+  }
+
+  return (
+    <ThemeProvider theme={theme}>
+      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+        <CssBaseline />
+        <PedidosProvider>
+           <AppWithSnackbar />
         </PedidosProvider>
       </LocalizationProvider>
     </ThemeProvider>

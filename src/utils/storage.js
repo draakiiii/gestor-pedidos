@@ -2,6 +2,7 @@
 const STORAGE_KEYS = {
   PEDIDOS_RESINA: 'pedidosResina',
   PEDIDOS_FIGURAS: 'pedidosFiguras',
+  CLIENTES: 'clientes',
 };
 
 // Funciones para manejar pedidos de resina
@@ -37,15 +38,39 @@ export const savePedidosFiguras = (pedidos) => {
   localStorage.setItem(STORAGE_KEYS.PEDIDOS_FIGURAS, JSON.stringify(pedidosParaGuardar));
 };
 
+// Funciones para gestionar clientes
+export const getClientes = () => {
+  const clientes = localStorage.getItem(STORAGE_KEYS.CLIENTES);
+  return clientes ? JSON.parse(clientes) : [];
+};
+
+export const saveClientes = (clientes) => {
+  localStorage.setItem(STORAGE_KEYS.CLIENTES, JSON.stringify(clientes));
+};
+
 // Función para calcular el dinero bruto entre fechas
 export const calcularDineroBruto = (fechaInicio, fechaFin, pedidosFiguras) => {
   const inicio = new Date(fechaInicio);
-  const fin = new Date(fechaFin);
+  const fin = fechaFin ? new Date(fechaFin) : new Date(); // Si no hay fecha fin, usamos la fecha actual
   
   return pedidosFiguras
     .filter(pedido => {
       const fechaPedido = new Date(pedido.fecha);
-      return fechaPedido >= inicio && fechaPedido <= fin;
+      // Si no hay fecha fin, tomamos todos los pedidos a partir de la fecha inicio
+      return fechaFin 
+        ? (fechaPedido >= inicio && fechaPedido <= fin)
+        : (fechaPedido >= inicio);
     })
-    .reduce((total, pedido) => total + Number(pedido.precio), 0);
+    .reduce((total, pedido) => total + Number(pedido.precio || 0), 0);
+};
+
+// Función para calcular automáticamente el dinero bruto de un pedido de resina
+export const calcularDineroBrutoPedidoResina = (pedido, pedidosFiguras) => {
+  if (!pedido || !pedido.fechaCompra) return 0;
+  
+  return calcularDineroBruto(
+    pedido.fechaCompra,
+    pedido.fechaFin,
+    pedidosFiguras
+  );
 }; 

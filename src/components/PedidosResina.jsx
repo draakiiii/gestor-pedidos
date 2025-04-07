@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Button, 
@@ -14,39 +14,62 @@ import {
   Card,
   CardContent,
   Typography,
-  Stack
+  Stack,
+  MenuItem,
+  Chip,
+  InputAdornment
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { calcularDineroBruto } from '../utils/storage';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Info as InfoIcon } from '@mui/icons-material';
 import { usePedidos } from '../context/PedidosContext';
+import { calcularDineroBrutoPedidoResina } from '../utils/storage';
+
+const ESTADOS = [
+  { codigo: 'P', nombre: 'Pendiente', color: '#ff9800' }, // Naranja
+  { codigo: 'E', nombre: 'Entregado', color: '#4caf50' }, // Verde
+  { codigo: 'C', nombre: 'Cancelado', color: '#f44336' }, // Rojo
+];
 
 const PedidosResina = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { pedidosResina, pedidosFiguras, actualizarPedidosResina, eliminarPedidoResina } = usePedidos();
+  const { pedidosResina, actualizarPedidosResina, eliminarPedidoResina, pedidosFiguras } = usePedidos();
   const [openDialog, setOpenDialog] = useState(false);
   const [currentPedido, setCurrentPedido] = useState(null);
+  const [cantidad, setCantidad] = useState('');
+  const [dineroBruto, setDineroBruto] = useState('');
+  const [coste, setCoste] = useState('');
+  const [estado, setEstado] = useState('');
   const [fechaCompra, setFechaCompra] = useState(null);
   const [fechaFin, setFechaFin] = useState(null);
-  const [cantidad, setCantidad] = useState('');
+
+  // Calcular el dinero bruto automáticamente cuando cambian las fechas
+  useEffect(() => {
+    if (fechaCompra) {
+      const pedidoTemp = {
+        fechaCompra,
+        fechaFin
+      };
+      const dineroBrutoCalculado = calcularDineroBrutoPedidoResina(pedidoTemp, pedidosFiguras);
+      setDineroBruto(dineroBrutoCalculado.toString());
+    }
+  }, [fechaCompra, fechaFin, pedidosFiguras]);
 
   const handleSave = () => {
-    if (!fechaCompra || !cantidad) return;
+    if (!cantidad || !estado || !fechaCompra) return;
 
-    const dineroBruto = calcularDineroBruto(
-      fechaCompra,
-      fechaFin || new Date('2100-01-01'),
-      pedidosFiguras
-    );
-
+    // Recalculamos el dinero bruto justo antes de guardar
+    const dineroBrutoFinal = calcularDineroBrutoPedidoResina({ fechaCompra, fechaFin }, pedidosFiguras);
+    
     const newPedido = {
       id: currentPedido?.id || Date.now(),
-      fechaCompra: fechaCompra,
-      fechaFin: fechaFin,
       cantidad: Number(cantidad),
-      dineroBruto
+      dineroBruto: dineroBrutoFinal,
+      coste: Number(coste || 0),
+      estado,
+      fechaCompra,
+      fechaFin: fechaFin,
     };
 
     actualizarPedidosResina(newPedido);
@@ -55,79 +78,72 @@ const PedidosResina = () => {
 
   const handleEdit = (pedido) => {
     setCurrentPedido(pedido);
-    setFechaCompra(new Date(pedido.fechaCompra));
-    setFechaFin(pedido.fechaFin ? new Date(pedido.fechaFin) : null);
     setCantidad(pedido.cantidad.toString());
+    // No establecemos dineroBruto aquí, se calculará automáticamente
+    setCoste(pedido.coste ? pedido.coste.toString() : '0');
+    setEstado(pedido.estado);
+    setFechaCompra(pedido.fechaCompra ? new Date(pedido.fechaCompra) : null);
+    setFechaFin(pedido.fechaFin ? new Date(pedido.fechaFin) : null);
     setOpenDialog(true);
   };
 
   const handleClose = () => {
     setOpenDialog(false);
     setCurrentPedido(null);
+    setCantidad('');
+    setDineroBruto('');
+    setCoste('');
+    setEstado('');
     setFechaCompra(null);
     setFechaFin(null);
-    setCantidad('');
+  };
+
+  const getEstadoChip = (codigoEstado) => {
+    const estadoData = ESTADOS.find(e => e.codigo === codigoEstado);
+    if (estadoData) {
+      return (
+        <Chip
+          label={estadoData.nombre}
+          size="small"
+          sx={{ backgroundColor: estadoData.color, color: 'white' }}
+        />
+      );
+    }
+    return <Chip label={codigoEstado || 'N/A'} size="small" />;
   };
 
   const columns = [
-    { 
-      field: 'fechaCompra', 
-      headerName: 'Fecha Compra', 
+    {
+      field: 'fechaCompra',
+      headerName: 'F. Compra',
       type: 'date',
-      flex: 1,
-      minWidth: 130,
-      valueGetter: (params) => {
-        return params.value ? new Date(params.value) : null;
-      },
-      valueFormatter: (params) => {
-        if (params.value) {
-          return params.value.toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-          });
-        }
-        return '';
-      }
-    },
-    { 
-      field: 'fechaFin', 
-      headerName: 'Fecha Fin', 
-      type: 'date',
-      flex: 1,
-      minWidth: 130,
-      valueGetter: (params) => {
-        return params.value ? new Date(params.value) : null;
-      },
-      valueFormatter: (params) => {
-        if (params.value) {
-          return params.value.toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-          });
-        }
-        return 'Pendiente';
-      }
-    },
-    { 
-      field: 'cantidad', 
-      headerName: 'Cantidad', 
-      type: 'number', 
       flex: 1,
       minWidth: 110,
-      valueFormatter: (params) => {
-        return params.value ? `${params.value} KG` : '';
-      },
+      valueFormatter: (params) => params.value ? new Date(params.value).toLocaleDateString('es-ES') : '',
+    },
+    {
+      field: 'fechaFin',
+      headerName: 'F. Fin',
+      type: 'date',
+      flex: 1,
+      minWidth: 110,
+      valueFormatter: (params) => params.value ? new Date(params.value).toLocaleDateString('es-ES') : '',
+    },
+    {
+      field: 'cantidad',
+      headerName: 'Cantidad',
+      type: 'number',
+      flex: 0.5,
+      minWidth: 80,
       headerAlign: 'right',
       align: 'right',
     },
-    { 
-      field: 'dineroBruto', 
-      headerName: 'Dinero Bruto', 
-      type: 'number', 
+    {
+      field: 'dineroBruto',
+      headerName: 'Ing. Bruto',
+      type: 'number',
       flex: 1,
-      minWidth: 120,
+      minWidth: 110,
       valueFormatter: (params) => {
         if (params.value != null) {
           return new Intl.NumberFormat('es-ES', {
@@ -141,28 +157,70 @@ const PedidosResina = () => {
       align: 'right',
     },
     {
+      field: 'coste',
+      headerName: 'Coste',
+      type: 'number',
+      flex: 1,
+      minWidth: 100,
+      valueFormatter: (params) => {
+        if (params.value != null) {
+          return new Intl.NumberFormat('es-ES', {
+            style: 'currency',
+            currency: 'EUR'
+          }).format(params.value);
+        }
+        return '';
+      },
+      headerAlign: 'right',
+      align: 'right',
+    },
+    {
+      field: 'beneficioNeto',
+      headerName: 'Benef. Neto',
+      type: 'number',
+      flex: 1,
+      minWidth: 110,
+      valueGetter: (params) => {
+        const bruto = params.row.dineroBruto || 0;
+        const coste = params.row.coste || 0;
+        return bruto - coste;
+      },
+      valueFormatter: (params) => {
+        if (params.value != null) {
+          return new Intl.NumberFormat('es-ES', {
+            style: 'currency',
+            currency: 'EUR'
+          }).format(params.value);
+        }
+        return '';
+      },
+      headerAlign: 'right',
+      align: 'right',
+    },
+    {
+      field: 'estado',
+      headerName: 'Estado',
+      flex: 1,
+      minWidth: 100,
+      renderCell: (params) => getEstadoChip(params.value),
+      headerAlign: 'center',
+      align: 'center'
+    },
+    {
       field: 'actions',
       headerName: 'Acciones',
-      width: 120,
+      width: 100,
       sortable: false,
       filterable: false,
       renderCell: (params) => (
         <Box>
           <Tooltip title="Editar">
-            <IconButton 
-              onClick={() => handleEdit(params.row)}
-              size="small"
-              sx={{ mr: 1 }}
-            >
+            <IconButton onClick={() => handleEdit(params.row)} size="small" sx={{ mr: 1 }}>
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Eliminar">
-            <IconButton 
-              onClick={() => eliminarPedidoResina(params.row.id)}
-              size="small"
-              color="error"
-            >
+            <IconButton onClick={() => eliminarPedidoResina(params.row.id)} size="small" color="error">
               <DeleteIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -171,79 +229,71 @@ const PedidosResina = () => {
     },
   ];
 
-  const MobileCard = ({ pedido }) => (
-    <Card sx={{ mb: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-      <CardContent>
-        <Stack spacing={1}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Fecha Compra
-            </Typography>
-            <Typography>
-              {new Date(pedido.fechaCompra).toLocaleDateString('es-ES')}
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Fecha Fin
-            </Typography>
-            <Typography>
-              {pedido.fechaFin ? new Date(pedido.fechaFin).toLocaleDateString('es-ES') : 'Pendiente'}
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Cantidad
-            </Typography>
-            <Typography>
-              {pedido.cantidad} KG
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Dinero Bruto
-            </Typography>
-            <Typography>
-              {new Intl.NumberFormat('es-ES', {
+  const MobileCard = ({ pedido }) => {
+    return (
+      <Card sx={{ mb: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <CardContent>
+          <Stack spacing={1.5}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary">F. Compra</Typography>
+              <Typography>{pedido.fechaCompra ? new Date(pedido.fechaCompra).toLocaleDateString('es-ES') : '-'}</Typography>
+            </Box>
+             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary">F. Fin</Typography>
+              <Typography>{pedido.fechaFin ? new Date(pedido.fechaFin).toLocaleDateString('es-ES') : '-'}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary">Cantidad</Typography>
+              <Typography>{pedido.cantidad}</Typography>
+            </Box>
+             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary">Ing. Bruto</Typography>
+              <Typography>{new Intl.NumberFormat('es-ES', {
                 style: 'currency',
                 currency: 'EUR'
-              }).format(pedido.dineroBruto)}
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-            <IconButton 
-              onClick={() => handleEdit(pedido)}
-              size="small"
-              color="primary"
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton 
-              onClick={() => eliminarPedidoResina(pedido.id)}
-              size="small"
-              color="error"
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        </Stack>
-      </CardContent>
-    </Card>
-  );
+              }).format(pedido.dineroBruto)}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary">Coste</Typography>
+              <Typography>{new Intl.NumberFormat('es-ES', {
+                style: 'currency',
+                currency: 'EUR'
+              }).format(pedido.coste || 0)}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary">Benef. Neto</Typography>
+              <Typography sx={{ fontWeight: 'bold' }}>{new Intl.NumberFormat('es-ES', {
+                style: 'currency',
+                currency: 'EUR'
+              }).format((pedido.dineroBruto || 0) - (pedido.coste || 0))}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary">Estado</Typography>
+              {getEstadoChip(pedido.estado)}
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+                <IconButton onClick={() => handleEdit(pedido)} size="small" color="primary">
+                    <EditIcon fontSize="small" />
+                </IconButton>
+                <IconButton onClick={() => eliminarPedidoResina(pedido.id)} size="small" color="error">
+                    <DeleteIcon fontSize="small" />
+                </IconButton>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
-    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', height: 'auto', minHeight: isMobile ? 'auto' : 600 }}>
       <Button
         variant="contained"
         startIcon={<AddIcon />}
         onClick={() => setOpenDialog(true)}
-        sx={{ 
-          mb: 2,
-          alignSelf: 'flex-start',
-          px: 3
-        }}
+        sx={{ mb: 2, alignSelf: 'flex-start', px: 3 }}
       >
-        Añadir Pedido
+        Añadir Pedido Resina
       </Button>
 
       {isMobile ? (
@@ -256,8 +306,8 @@ const PedidosResina = () => {
         <DataGrid
           rows={pedidosResina}
           columns={columns}
-          pageSize={5}
-          rowsPerPageOptions={[5, 10, 25]}
+          pageSize={10}
+          rowsPerPageOptions={[10, 25, 50, 100]}
           disableSelectionOnClick
           getRowId={(row) => row.id}
           autoHeight
@@ -267,7 +317,11 @@ const PedidosResina = () => {
             },
             '& .MuiDataGrid-row:hover': {
               backgroundColor: 'rgba(0, 0, 0, 0.04)',
-            }
+            },
+            '& .MuiDataGrid-virtualScroller': {
+              overflow: 'auto !important',
+              minHeight: 500
+            },
           }}
         />
       )}
@@ -279,50 +333,109 @@ const PedidosResina = () => {
         fullWidth
         fullScreen={isMobile}
       >
-        <DialogTitle sx={{ pb: 2 }}>
-          {currentPedido ? 'Editar Pedido' : 'Nuevo Pedido'}
+        <DialogTitle>
+          {currentPedido ? 'Editar Pedido Resina' : 'Nuevo Pedido Resina'}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 3, 
-            pt: 2 
-          }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 2 }}>
             <DatePicker
               label="Fecha Compra"
               value={fechaCompra}
-              onChange={setFechaCompra}
-              renderInput={(params) => <TextField {...params} fullWidth required />}
-              inputFormat="dd/MM/yyyy"
+              onChange={(newValue) => setFechaCompra(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  fullWidth
+                  margin="dense"
+                  required
+                  sx={{ mb: 2 }}
+                />
+              )}
             />
+
             <DatePicker
-              label="Fecha Fin (Opcional)"
+              label="Fecha Fin (opcional)"
               value={fechaFin}
-              onChange={setFechaFin}
-              renderInput={(params) => <TextField {...params} fullWidth />}
-              inputFormat="dd/MM/yyyy"
+              onChange={(newValue) => setFechaFin(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  fullWidth
+                  margin="dense"
+                  sx={{ mb: 2 }}
+                />
+              )}
             />
+
             <TextField
-              label="Cantidad (KG)"
+              label="Cantidad"
               type="number"
               value={cantidad}
               onChange={(e) => setCantidad(e.target.value)}
-              required
               fullWidth
+              margin="dense"
+              required
               InputProps={{
-                inputProps: { min: 0, step: 0.1 }
+                inputProps: { min: 0 }
               }}
+              sx={{ mb: 2 }}
             />
+
+            <TextField
+              label="Dinero Bruto (€)"
+              type="number"
+              value={dineroBruto}
+              fullWidth
+              margin="dense"
+              required
+              disabled={true}
+              InputProps={{
+                inputProps: { min: 0, step: 0.01 },
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Tooltip title="El valor se calcula automáticamente sumando todos los pedidos de figuras entre las fechas seleccionadas. Se actualiza en tiempo real cuando cambias las fechas o cuando hay cambios en los pedidos de figuras.">
+                      <InfoIcon color="primary" fontSize="small" />
+                    </Tooltip>
+                  </InputAdornment>
+                )
+              }}
+              sx={{ mb: 2 }}
+            />
+
+            <TextField
+              label="Coste (€)"
+              type="number"
+              value={coste}
+              onChange={(e) => setCoste(e.target.value)}
+              fullWidth
+              margin="dense"
+              InputProps={{
+                inputProps: { min: 0, step: 0.01 }
+              }}
+              sx={{ mb: 2 }}
+            />
+
+            <TextField
+              select
+              label="Estado"
+              value={estado}
+              onChange={(e) => setEstado(e.target.value)}
+              fullWidth
+              margin="dense"
+              required
+              sx={{ mb: 2 }}
+            >
+              {ESTADOS.map((opcion) => (
+                <MenuItem key={opcion.codigo} value={opcion.codigo}>
+                  {opcion.nombre}
+                </MenuItem>
+              ))}
+            </TextField>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={handleClose} variant="outlined" fullWidth={isMobile}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} variant="contained" fullWidth={isMobile}>
-            Guardar
-          </Button>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancelar</Button>
+          <Button onClick={handleSave} variant="contained" color="primary">Guardar</Button>
         </DialogActions>
       </Dialog>
     </Box>
