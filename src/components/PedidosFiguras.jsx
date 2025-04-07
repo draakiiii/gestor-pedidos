@@ -16,7 +16,9 @@ import {
   CardContent,
   Typography,
   Stack,
-  Chip
+  Chip,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -41,6 +43,7 @@ const PedidosFiguras = () => {
   const [ubicacion, setUbicacion] = useState('');
   const [fecha, setFecha] = useState(null);
   const [comprador, setComprador] = useState('');
+  const [entregado, setEntregado] = useState(false);
 
   const handleSave = () => {
     if (!figura || !precio || !ubicacion || !fecha) return;
@@ -51,7 +54,8 @@ const PedidosFiguras = () => {
       precio: Number(precio),
       ubicacion,
       fecha,
-      comprador: comprador || null
+      comprador: comprador || null,
+      entregado: entregado
     };
 
     actualizarPedidosFiguras(newPedido);
@@ -65,6 +69,7 @@ const PedidosFiguras = () => {
     setUbicacion(pedido.ubicacion);
     setFecha(pedido.fecha);
     setComprador(pedido.comprador || '');
+    setEntregado(pedido.entregado || false);
     setOpenDialog(true);
   };
 
@@ -76,6 +81,15 @@ const PedidosFiguras = () => {
     setUbicacion('');
     setFecha(null);
     setComprador('');
+    setEntregado(false);
+  };
+
+  const handleEntregadoChange = (pedido, isChecked) => {
+    const pedidoActualizado = {
+      ...pedido,
+      entregado: isChecked
+    };
+    actualizarPedidosFiguras(pedidoActualizado);
   };
 
   const getUbicacionColor = (codigo) => {
@@ -162,6 +176,21 @@ const PedidosFiguras = () => {
       valueFormatter: (params) => params.value || 'Sin comprador'
     },
     {
+      field: 'entregado',
+      headerName: 'Entregado',
+      width: 110,
+      type: 'boolean',
+      renderCell: (params) => (
+        <Checkbox
+          checked={params.value || false}
+          onChange={(event) => handleEntregadoChange(params.row, event.target.checked)}
+          size="small"
+        />
+      ),
+      headerAlign: 'center',
+      align: 'center',
+    },
+    {
       field: 'actions',
       headerName: 'Acciones',
       width: 100,
@@ -244,6 +273,16 @@ const PedidosFiguras = () => {
                 </Typography>
               </Box>
             )}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Entregado
+              </Typography>
+              <Checkbox
+                checked={pedido.entregado || false}
+                onChange={(event) => handleEntregadoChange(pedido, event.target.checked)}
+                size="small"
+              />
+            </Box>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
               <IconButton 
                 onClick={() => handleEdit(pedido)}
@@ -394,6 +433,17 @@ const PedidosFiguras = () => {
               onChange={(e) => setComprador(e.target.value)}
               fullWidth
               placeholder="Ej: Desiree"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={entregado}
+                  onChange={(e) => setEntregado(e.target.checked)}
+                  name="entregado"
+                  color="primary"
+                />
+              }
+              label="Pedido Entregado"
             />
           </Box>
         </DialogContent>

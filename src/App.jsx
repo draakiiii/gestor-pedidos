@@ -18,6 +18,7 @@ import { es } from 'date-fns/locale';
 import PedidosResina from './components/PedidosResina';
 import PedidosFiguras from './components/PedidosFiguras';
 import ImportExport from './components/ImportExport';
+import GananciasMensuales from './components/GananciasMensuales';
 import { PedidosProvider } from './context/PedidosContext';
 
 // Crear tema personalizado
@@ -193,6 +194,9 @@ function App() {
                         </Typography>
                         <PedidosFiguras />
                       </Paper>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <GananciasMensuales />
                     </Grid>
                   </Grid>
                 </Paper>

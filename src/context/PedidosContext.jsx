@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { getPedidosResina, savePedidosResina, getPedidosFiguras, savePedidosFiguras, calcularDineroBruto } from '../utils/storage';
+import { format } from 'date-fns';
 
-const PedidosContext = createContext();
+export const PedidosContext = createContext();
 
 export const usePedidos = () => {
   const context = useContext(PedidosContext);
@@ -14,6 +15,7 @@ export const usePedidos = () => {
 export const PedidosProvider = ({ children }) => {
   const [pedidosResina, setPedidosResina] = useState([]);
   const [pedidosFiguras, setPedidosFiguras] = useState([]);
+  const [gananciasMensuales, setGananciasMensuales] = useState({});
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -30,14 +32,16 @@ export const PedidosProvider = ({ children }) => {
         fechaCompra: new Date(p.fechaCompra),
         fechaFin: p.fechaFin ? new Date(p.fechaFin) : null,
         cantidad: Number(p.cantidad),
-        dineroBruto: Number(p.dineroBruto || 0)
+        dineroBruto: Number(p.dineroBruto || 0),
+        entregado: typeof p.entregado === 'boolean' ? p.entregado : false
       }));
 
       const pedidosFigurasConFechas = pedidosFigurasGuardados.map(p => ({
         ...p,
         id: p.id || Date.now(),
         fecha: new Date(p.fecha),
-        precio: Number(p.precio)
+        precio: Number(p.precio),
+        entregado: typeof p.entregado === 'boolean' ? p.entregado : false
       }));
 
       console.log('Pedidos de resina procesados:', pedidosResinaConFechas);
@@ -72,6 +76,29 @@ export const PedidosProvider = ({ children }) => {
     }
   }, [pedidosFiguras]);
 
+  // Calcular ganancias mensuales cuando cambian los pedidos de figuras
+  useEffect(() => {
+    const calcularGanancias = () => {
+      const ganancias = {};
+      pedidosFiguras
+        .filter(pedido => pedido.entregado && pedido.fecha instanceof Date && !isNaN(pedido.fecha))
+        .forEach(pedido => {
+          try {
+            const mesAnio = format(pedido.fecha, 'yyyy-MM');
+            if (!ganancias[mesAnio]) {
+              ganancias[mesAnio] = 0;
+            }
+            ganancias[mesAnio] += Number(pedido.precio) || 0;
+          } catch (error) {
+            console.error("Error al formatear la fecha para el cálculo de ganancias:", pedido.fecha, error);
+          }
+        });
+      setGananciasMensuales(ganancias);
+    };
+
+    calcularGanancias();
+  }, [pedidosFiguras]);
+
   const actualizarPedidosResina = (nuevoPedido) => {
     console.log('Actualizando pedido de resina:', nuevoPedido);
     
@@ -84,7 +111,8 @@ export const PedidosProvider = ({ children }) => {
       fechaFin: nuevoPedido.fechaFin ? 
         (nuevoPedido.fechaFin instanceof Date ? nuevoPedido.fechaFin : new Date(nuevoPedido.fechaFin)) 
         : null,
-      cantidad: Number(nuevoPedido.cantidad)
+      cantidad: Number(nuevoPedido.cantidad),
+      entregado: typeof nuevoPedido.entregado === 'boolean' ? nuevoPedido.entregado : false
     };
 
     // Calcular dinero bruto
@@ -117,7 +145,8 @@ export const PedidosProvider = ({ children }) => {
       id: nuevoPedido.id || Date.now(),
       fecha: nuevoPedido.fecha instanceof Date ? 
         nuevoPedido.fecha : new Date(nuevoPedido.fecha),
-      precio: Number(nuevoPedido.precio)
+      precio: Number(nuevoPedido.precio),
+      entregado: typeof nuevoPedido.entregado === 'boolean' ? nuevoPedido.entregado : false
     };
 
     // Corregir la lógica de actualización
@@ -151,6 +180,7 @@ export const PedidosProvider = ({ children }) => {
     <PedidosContext.Provider value={{
       pedidosResina,
       pedidosFiguras,
+      gananciasMensuales,
       actualizarPedidosResina,
       actualizarPedidosFiguras,
       eliminarPedidoResina,
